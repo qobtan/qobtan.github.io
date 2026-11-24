@@ -1,0 +1,4 @@
+const C='qobtan-v1';const F=["./", "index.html", "app.css", "app.js", "products.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "logo.jpg", "p1.jpg", "p10.jpg", "p11.jpg", "p12.jpg", "p13.jpg", "p14.jpg", "p15.jpg", "p16.jpg", "p17.jpg", "p18.jpg", "p2.jpg", "p3.jpg", "p4.jpg", "p5.jpg", "p6.jpg", "p7.jpg", "p8.jpg", "p9.jpg"];
+self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(F)));self.skipWaiting()});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))));self.clients.claim()});
+self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))});
