@@ -7,7 +7,7 @@ const store = {
 };
 let cart = store.get('cart', {});
 let info = store.get('info', { name: '', phone: '', address: '' });
-let tab = 'shop', q = '';
+let tab = 'shop', q = '', det = null;
 const money = n => n + ' ج.م';
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const lines = () => PRODUCTS.filter(p => p.price > 0 && cart[p.id] > 0);
@@ -22,8 +22,8 @@ function ctl(p) {
     : `<div class="step"><button data-dec="${p.id}" aria-label="نقص">−</button><bdi>${n}</bdi><button data-inc="${p.id}" aria-label="زود">+</button></div>`;
 }
 function cardHtml(p) {
-  return `<div class="card${(cart[p.id] || 0) > 0 ? ' in' : ''}"><div class="pw">${p.img ? `<img src="${p.img}" alt="${esc(p.name)}">` : '<div class="ph"></div>'}${p.detail && p.price > 0 ? `<span class="tag">${esc(p.detail)}</span>` : ''}</div>
-  <div class="t">${esc(p.name)}</div><div class="pr">${p.price > 0 ? `<b>${p.price}</b> ج.م` : '<span class="soon">السعر قريبًا</span>'}</div>${ctl(p)}</div>`;
+  return `<div class="card${(cart[p.id] || 0) > 0 ? ' in' : ''}" data-open="${p.id}"><div class="pw">${p.img ? `<img src="${p.img}" alt="${esc(p.name)}">` : '<div class="ph"></div>'}${p.detail && p.price > 0 ? `<span class="tag">${esc(p.detail)}</span>` : ''}</div>
+  <div class="t">${esc(p.name)}</div><div class="more">التفاصيل ‹</div><div class="pr">${p.price > 0 ? `<b>${p.price}</b> ج.م` : '<span class="soon">السعر قريبًا</span>'}</div>${ctl(p)}</div>`;
 }
 function shop() {
   view.innerHTML = `<div class="search"><input type="search" id="q" placeholder="دوّر على منتج..." value="${esc(q)}"></div>
@@ -62,10 +62,29 @@ function cartView() {
     upd();
   }
 }
-function render(keepScroll) { badge(); document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab)); const y = scrollY; tab === 'shop' ? shop() : cartView(); if (keepScroll) scrollTo(0, y); }
+
+function detailView(p) {
+  const n = cart[p.id] || 0;
+  const rows = [['السعر', p.price > 0 ? money(p.price) : 'هيتأكد قريبًا']];
+  if (p.detail) rows.push(['تفاصيل', p.detail]);
+  rows.push(['التوصيل', 'داخل الفيوم'], ['الدفع', 'كاش عند الاستلام']);
+  view.innerHTML = `<button class="back" data-back="1">› رجوع للمنتجات</button>
+  <div class="dimg">${p.img ? `<img src="${p.img}" alt="${esc(p.name)}">` : '<div class="ph"></div>'}</div>
+  <h2 class="dt">${esc(p.name)}</h2><div class="dp">${p.price > 0 ? `<b>${p.price}</b> ج.م` : '<span class="soon">السعر قريبًا</span>'}</div>
+  ${p.desc ? `<div class="dd"><p>${esc(p.desc.intro)}</p>${p.desc.pts.map(t => `<p class="ck"><i>✓</i>${esc(t)}</p>`).join('')}</div>` : ''}
+  <div class="sum">${rows.map(r => `<div><span>${r[0]}</span><b>${esc(r[1])}</b></div>`).join('')}</div>
+  <div class="dctl">${ctl(p)}</div><button class="shr" data-share="${p.id}">مشاركة المنتج</button>${count() ? `<div class="bar"><div><span>${count()} قطعة</span><b>${money(total())}</b></div><button class="go" data-tab="cart">كمّل الطلب</button></div>` : ''}`;
+}
+function openP(id) { det = id; history.pushState({ d: id }, ''); render(); scrollTo(0, 0); }
+function closeP() { det = null; render(); }
+addEventListener('popstate', () => { if (det !== null) closeP(); });
+function render(keepScroll) { badge(); document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab)); const y = scrollY; if (det !== null && tab === 'shop') detailView(PRODUCTS.find(p => p.id === det)); else tab === 'shop' ? shop() : cartView(); if (keepScroll) scrollTo(0, y); }
 document.addEventListener('click', e => {
-  const t = e.target.closest('button'); if (!t) return;
-  if (t.dataset.tab) { tab = t.dataset.tab; render(); scrollTo(0, 0); }
+  const t = e.target.closest('button');
+  if (!t) { const c = e.target.closest('[data-open]'); if (c) openP(+c.dataset.open); return; }
+  if (t.dataset.back) { history.back(); }
+  else if (t.dataset.share) { const p = PRODUCTS.find(x => x.id === +t.dataset.share); const txt = p.name + (p.price > 0 ? ' - ' + money(p.price) : '') + '\nمنظفات القبطان (توصيل داخل الفيوم)'; if (navigator.share) navigator.share({ title: p.name, text: txt, url: location.origin + location.pathname }).catch(() => {}); else window.open('https://wa.me/?text=' + encodeURIComponent(txt + '\n' + location.origin + location.pathname)); }
+  else if (t.dataset.tab) { det = null; tab = t.dataset.tab; render(); scrollTo(0, 0); }
   else if (t.dataset.add) change(+t.dataset.add, 1);
   else if (t.dataset.inc) change(+t.dataset.inc, 1);
   else if (t.dataset.dec) change(+t.dataset.dec, -1);
