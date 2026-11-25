@@ -25,16 +25,19 @@ async function checkPin(p) {
 
 
 function showSec(s) {
-  if (!['orders', 'products', 'profit', 'materials', 'settings'].includes(s)) s = 'orders';
+  if (!['orders', 'products', 'profit', 'materials', 'more', 'customers', 'expenses', 'settings'].includes(s)) s = 'orders';
   document.querySelectorAll('.tabsec').forEach(e => e.classList.toggle('on', e.id === 'sec-' + s));
-  document.querySelectorAll('#bnav button').forEach(b => b.classList.toggle('on', b.dataset.sec === s));
+  document.querySelectorAll('#bnav button').forEach(b => b.classList.toggle('on', b.dataset.sec === (['customers', 'expenses', 'settings'].includes(s) ? 'more' : s)));
   try { localStorage.setItem('admsec', s); } catch (e) {}
   window.scrollTo(0, 0);
 }
 document.querySelectorAll('#bnav button').forEach(b => b.addEventListener('click', () => { showSec(b.dataset.sec); if (b.dataset.sec === 'orders') loadOrders(); if (b.dataset.sec === 'profit') loadProfit(); if (b.dataset.sec === 'materials') setMS(($('#recbox') && !$('#recbox').hidden) ? 'rec' : 'mat'); if (b.dataset.sec === 'products') loadStock(); }));
+document.addEventListener('click', e => { const g = e.target.closest && e.target.closest('[data-go]'); if (g) { showSec(g.dataset.go); if (g.dataset.go === 'customers') loadCustomers(); if (g.dataset.go === 'expenses') loadExp(); } });
 function enterPanel() { $('#bnav').hidden = false; const s0 = (new URLSearchParams(location.search).get('tab')) || 'orders'; showSec(s0); if (s0 === 'profit') loadProfit(); if (s0 === 'materials') loadMats(); loadStock(); }
 
 // ===== الأرباح =====
+let EXP = [];
+const expSum = (f, t) => EXP.filter(x => String(x.day) >= f && String(x.day) <= t).reduce((s, x) => s + +x.amount, 0);
 let PF = { orders: [], costs: {}, dcost: 0, per: 'today' };
 const cairoDay = d => new Date(d).toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' });
 const addDays = (k, n) => { const d = new Date(k + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
@@ -69,7 +72,8 @@ function sumRange(from, to, statuses) {
 async function loadProfit() {
   const box = $('#profit');
   if (!box.dataset.ready) box.innerHTML = '<div class="hint2">بيحسب...</div>';
-  const [o, c, mm] = await Promise.all([rpc('admin_list_orders', { p_pin: PIN }).catch(() => null), rpc('admin_get_costs', { p_pin: PIN }).catch(() => null), rpc('admin_get_materials', { p_pin: PIN }).catch(() => null)]);
+  const [o, c, mm, ee] = await Promise.all([rpc('admin_list_orders', { p_pin: PIN }).catch(() => null), rpc('admin_get_costs', { p_pin: PIN }).catch(() => null), rpc('admin_get_materials', { p_pin: PIN }).catch(() => null), rpc('admin_get_expenses', { p_pin: PIN }).catch(() => null)]);
+  EXP = ee && ee.ok && Array.isArray(ee.data) ? ee.data : [];
   PF.mats = mm && mm.ok && Array.isArray(mm.data) ? mm.data : [];
   if (!o || !o.ok || !Array.isArray(o.data) || !c || !c.ok || !c.data) { box.innerHTML = '<div class="msg err">مشكلة في تحميل الحسابات — جرّب تاني</div>'; return; }
   PF.orders = o.data; PF.costs = c.data.costs || {}; PF.dcost = +c.data.delivery_cost || 0;
@@ -84,25 +88,26 @@ function renderProfit() {
   const days = (new Date(to + 'T12:00:00Z') - new Date(from + 'T12:00:00Z')) / 864e5 + 1;
   const pf = addDays(from, -days), pt = addDays(from, -1);
   const prev = sumRange(pf, pt, ['delivered']);
-  const margin = done.sales + done.fee > 0 ? done.profit / (done.sales + done.fee) * 100 : 0;
+  const expD = expSum(from, to); const net = done.profit - expD; const prevNet = prev.profit - expSum(pf, pt);
+  const margin = done.sales + done.fee > 0 ? net / (done.sales + done.fee) * 100 : 0;
   const missingProducts = (rows || []).filter(p => PF.costs[String(p.id)] === undefined);
   let cls = 'none', vt = 'لسه مفيش طلبات اتسلّمت في الفترة دي', vs = 'أول ما تسلّم طلب هيظهر مكسبه هنا';
   if (done.n) {
-    if (done.profit <= 0) { cls = 'bad'; vt = 'خسران ❌ راجع الأسعار والتكلفة'; }
+    if (net <= 0) { cls = 'bad'; vt = 'خسران ❌ راجع الأسعار والتكلفة'; }
     else if (margin < 15) { cls = 'warn'; vt = 'مكسبك قليل ⚠️ فكّر ترفّع الأسعار شوية'; }
     else { cls = 'good'; vt = 'شغلك ماشي صح ✅ كمّل'; }
     vs = done.n + ' طلب اتسلّم · نسبة المكسب ' + Math.round(margin) + '%';
   }
   const cmpTxt = per === 'today' || per === 'yday' ? 'إمبارح' : 'الفترة اللي قبلها';
-  const cmp = prev.n || done.n ? (done.profit >= prev.profit ? '▲ أحسن من ' : '▼ أقل من ') + cmpTxt + ' (' + egp(prev.profit) + ')' : '';
+  const cmp = prev.n || done.n ? (net >= prevNet ? '▲ أحسن من ' : '▼ أقل من ') + cmpTxt + ' (' + egp(prevNet) + ')' : '';
   const today = cairoDay(new Date()); const bars = [];
-  let mx = 1; for (let i = 6; i >= 0; i--) { const k = addDays(today, -i); const s = sumRange(k, k, ['delivered']); bars.push([k, s.profit]); mx = Math.max(mx, Math.abs(s.profit)); }
+  let mx = 1; for (let i = 6; i >= 0; i--) { const k = addDays(today, -i); const s = sumRange(k, k, ['delivered']); const sp = s.profit - expSum(k, k); bars.push([k, sp]); mx = Math.max(mx, Math.abs(sp)); }
   const dn = k => new Date(k + 'T12:00:00Z').toLocaleDateString('ar-EG', { weekday: 'short', timeZone: 'UTC' });
   const matSpent = (PF.mats || []).filter(m => m.kind === 'buy' && String(m.day) >= from && String(m.day) <= to).reduce((s, m) => s + +m.price, 0);
   const top = Object.entries(done.prod).sort((x, y) => y[1] - x[1]).slice(0, 3);
   const chips = [['today', 'النهاردة'], ['yday', 'إمبارح'], ['week', 'آخر ٧ أيام'], ['month', 'الشهر ده']].map(f => `<button type="button" class="ochip ${per === f[0] ? 'on' : ''}" data-pf="${f[0]}">${f[1]}</button>`).join('');
   box.innerHTML = `<div class="pchips">${chips}</div>
-  <div class="pv ${cls}"><div class="vt">${vt}</div><div class="vp">${egp(done.profit)}</div><div class="vs">${vs}</div>${cmp ? `<div class="vs" style="margin-top:6px">${cmp}</div>` : ''}</div>
+  <div class="pv ${cls}"><div class="vt">${vt}</div><div class="vp">${egp(net)}</div><div class="vs">${vs}</div>${cmp ? `<div class="vs" style="margin-top:6px">${cmp}</div>` : ''}</div>
   ${missingProducts.length ? `<div class="pwarn">⚠️ ناقص تكلفة ${missingProducts.length} منتج، فالمكسب مش دقيق. اكتب سعر الشراء لكل منتج من القسم اللي تحت.</div>` : ''}
   ${matSpent ? `<div class="pwarn" style="background:#eef3fa;border-color:#c9d6e8;color:#0b2a4a">📦 اشتريت خامات في الفترة دي بـ ${egp(matSpent)}. المبلغ ده مش متخصوم من المكسب فوق عشان التكلفة متتحسبش مرتين. لو سعر شراء المنتج مش شامل الأكياس والعبوات، ضيفها على تكلفة المنتج.</div>` : ''}
   <div class="pgrid">
@@ -110,6 +115,8 @@ function renderProfit() {
     <div class="pst"><span>تكلفة البضاعة</span><b>${egp(done.cost)}</b></div>
     <div class="pst"><span>خدمة التوصيل (من العملاء)</span><b>${egp(done.fee)}</b></div>
     <div class="pst"><span>تكلفة التوصيل عليك</span><b>${egp(done.dcost)}</b></div>
+    <div class="pst"><span>مكسب قبل المصروفات</span><b>${egp(done.profit)}</b></div>
+    <div class="pst"><span>المصروفات (إيجار ومرتبات...)</span><b>${egp(expD)}</b></div>
     <div class="pst"><span>قطع اتباعت</span><b>${done.qty}</b></div>
     <div class="pst"><span>لسه ماتسلمتش</span><b>${pend.n} طلب</b><span>مكسب متوقع ${egp(pend.profit)}</span></div>
   </div>
@@ -388,6 +395,7 @@ function renderOrders() {
     <div class="oc-who">${esc(o.customer_name)}</div>
     <div class="oc-ad">📍 ${esc(o.address)}${o.city ? ' — ' + esc(o.city) : ''}</div>
     <div class="oc-ct"><a class="ob call" href="tel:${esc(o.phone)}">📞 ${esc(o.phone)}</a><a class="ob wa2" href="${esc(waCust(o.phone, o))}" target="_blank" rel="noopener">واتساب</a></div>
+    <div class="oc-ct oc-inv"><a class="ob inv" href="${esc(invUrl(o))}" target="_blank" rel="noopener">🧾 فاتورة</a><a class="ob wa2" href="${esc(waInv(o))}" target="_blank" rel="noopener">ابعت الفاتورة واتساب</a></div>
     <details class="oc-it"><summary>🧺 ${qty} قطعة — ${first}${more}</summary>${items}</details>
     <div class="oc-tot"><span class="pay">${pay}</span><span class="amt">${+o.total} <small>ج.م</small></span></div>
     ${+o.delivery_fee ? `<div class="oc-fee">منتجات ${+o.subtotal} + خدمة توصيل ${+o.delivery_fee}</div>` : ''}
@@ -529,3 +537,73 @@ function setMS(v) {
   document.querySelectorAll('[data-ms]').forEach(b => b.classList.toggle('on', b.dataset.ms === v));
   if (v === 'rec') loadNotes(); else loadMats();
 }
+
+/* ===== فاتورة ===== */
+const invUrl = o => 'https://qobtan.github.io/invoice.html?id=' + o.id + '&t=' + o.token;
+function waInv(o) {
+  let n = String(o.phone).replace(/\D/g, ''); if (n.startsWith('00')) n = n.slice(2); if (n.startsWith('0')) n = '20' + n.slice(1);
+  return 'https://wa.me/' + n + '?text=' + encodeURIComponent('أهلاً ' + o.customer_name + '، دي فاتورة طلبك رقم ' + o.id + ' من منظفات القبطان:\n' + invUrl(o) + '\nشكراً لثقتك 🌹');
+}
+/* ===== العملاء ===== */
+async function loadCustomers() {
+  const box = $('#custbox'); box.innerHTML = '<div class="hint2">بيحمّل...</div>';
+  const r = await rpc('admin_list_orders', { p_pin: PIN }).catch(() => null);
+  if (!r || !r.ok || !Array.isArray(r.data)) { box.innerHTML = '<div class="msg err">مشكلة في التحميل — جرّب تاني</div>'; return; }
+  ORDS = r.data; renderCustomers();
+}
+function custGroups() {
+  const g = {};
+  ORDS.filter(o => o.status !== 'canceled').forEach(o => {
+    const k = String(o.phone).replace(/\D/g, '').slice(-10) || String(o.customer_name);
+    const x = g[k] || (g[k] = { name: o.customer_name, phone: o.phone, n: 0, spent: 0, last: o.created_at, o: o });
+    x.n++; x.spent += +o.total || 0; if (o.created_at > x.last) { x.last = o.created_at; x.name = o.customer_name; x.o = o; }
+  });
+  return Object.values(g).sort((p, q) => q.spent - p.spent);
+}
+function renderCustomers() {
+  const all = custGroups(); const qv = (($('#csearch') || {}).value || '').trim().toLowerCase();
+  const list = all.filter(c => !qv || (c.name + ' ' + c.phone).toLowerCase().includes(qv));
+  const rep = all.filter(c => c.n > 1).length;
+  const fd = s => new Date(s).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' });
+  const medal = i => i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+  const body = list.length ? list.map(c => { const i = all.indexOf(c); return `<div class="pcard cust"><div class="mh"><b>${medal(i)} ${esc(c.name)}</b><span class="mrem">${c.n} طلب</span></div>
+    <div class="msub">اشترى بـ ${egp(c.spent)} · آخر طلب ${esc(fd(c.last))}${c.n > 1 ? ' · عميل راجع 🔁' : ''}</div>
+    <div class="oc-ct"><a class="ob call" href="tel:${esc(c.phone)}">📞 ${esc(c.phone)}</a><a class="ob wa2" href="${esc(waCust(c.phone, c.o))}" target="_blank" rel="noopener">واتساب</a></div></div>`; }).join('') : '<div class="pempty">مفيش عملاء لسه. أول ما حد يطلب هيظهر هنا.</div>';
+  if ($('#csearch') && document.activeElement && document.activeElement.id === 'csearch') { $('#clist').innerHTML = body; return; }
+  $('#custbox').innerHTML = `<div class="pgrid"><div class="pst"><span>عدد العملاء</span><b>${all.length}</b></div><div class="pst"><span>رجعوا طلبوا تاني</span><b>${rep}</b></div></div>
+  <div class="ptools"><input type="search" id="csearch" placeholder="🔍 دوّر باسم أو رقم" value="${esc(qv)}"></div><div id="clist">${body}</div>`;
+}
+document.addEventListener('input', e => { if (e.target.id === 'csearch') renderCustomers(); });
+/* ===== المصروفات ===== */
+const EK = { delivery: ['🚚', 'توصيل'], rent: ['🏠', 'إيجار'], salary: ['👷', 'مرتبات'], other: ['📎', 'أخرى'] };
+let EKSEL = 'rent';
+async function loadExp() {
+  const r = await rpc('admin_get_expenses', { p_pin: PIN }).catch(() => null);
+  if (!r || !r.ok || !Array.isArray(r.data)) { $('#expbox').innerHTML = '<div class="msg err">مشكلة في التحميل — جرّب تاني</div>'; return; }
+  EXP = r.data; renderExp();
+}
+function renderExp() {
+  const mk = todayK().slice(0, 7); const mon = EXP.filter(x => String(x.day).slice(0, 7) === mk);
+  const tot = mon.reduce((s, x) => s + +x.amount, 0);
+  const by = Object.keys(EK).map(k => [k, mon.filter(x => x.kind === k).reduce((s, x) => s + +x.amount, 0)]).filter(x => x[1] > 0);
+  $('#expbox').innerHTML = `<div class="pgrid"><div class="pst"><span>مصروفات الشهر ده</span><b>${egp(tot)}</b></div><div class="pst"><span>بتتخصم من المكسب</span><b>تلقائي</b></div></div>
+  ${by.length ? '<div class="msub" style="margin:0 4px 8px">' + by.map(x => EK[x[0]][0] + ' ' + EK[x[0]][1] + ': ' + egp(x[1])).join(' · ') + '</div>' : ''}
+  <details class="pcard matform" open><summary>+ تسجيل مصروف</summary>
+    <div class="ochips" id="ek">${Object.keys(EK).map(k => `<button type="button" class="ochip ${EKSEL === k ? 'on' : ''}" data-ek="${k}">${EK[k][0]} ${EK[k][1]}</button>`).join('')}</div>
+    <label class="lbl">المبلغ (ج.م)</label><input type="number" inputmode="decimal" min="0" id="e-amt">
+    <label class="lbl">ملاحظة — اختياري</label><input type="text" id="e-note" placeholder="مثال: إيجار المحل، مرتب أحمد">
+    <label class="lbl">التاريخ</label><input type="date" id="e-day" value="${todayK()}">
+    <div class="hint2" style="margin-top:6px">لو كتبت "تكلفة التوصيل للطلب" في الأرباح، متسجلهاش هنا تاني. سجّل هنا بس أي توصيل زيادة.</div>
+    <button class="abtn" type="button" id="e-save">حفظ المصروف</button><div class="msg" id="e-msg"></div></details>
+  <div class="pcard">${EXP.length ? EXP.slice(0, 60).map(x => `<div class="crow"><div class="cn">${EK[x.kind][0]} ${EK[x.kind][1]} · ${egp(+x.amount)}<small>${esc(String(x.day))}${x.note ? ' · ' + esc(x.note) : ''}</small></div><button type="button" class="mdel" data-edel="${x.id}">✕</button></div>`).join('') : '<div class="pempty">لسه مسجلتش مصروفات.</div>'}</div>`;
+}
+document.addEventListener('click', async e => {
+  const t = e.target; if (!t.closest) return;
+  const k = t.closest('[data-ek]'); if (k) { EKSEL = k.dataset.ek; document.querySelectorAll('[data-ek]').forEach(b => b.classList.toggle('on', b.dataset.ek === EKSEL)); return; }
+  if (t.id === 'e-save') {
+    const amt = +$('#e-amt').value, m = $('#e-msg'); if (!(amt > 0)) { m.className = 'msg err'; m.textContent = 'اكتب المبلغ'; return; }
+    const r = await rpc('admin_add_expense', { p_pin: PIN, p_kind: EKSEL, p_amount: amt, p_note: $('#e-note').value.trim(), p_day: $('#e-day').value || todayK() }).catch(() => null);
+    if (r && r.ok && r.data === true) await loadExp(); else { m.className = 'msg err'; m.textContent = 'فشل الحفظ — جرّب تاني'; } return;
+  }
+  const d = t.closest('[data-edel]'); if (d) { if (!confirm('تمسح المصروف ده؟')) return; const r = await rpc('admin_del_expense', { p_pin: PIN, p_id: +d.dataset.edel }).catch(() => null); if (r && r.ok) loadExp(); }
+});
