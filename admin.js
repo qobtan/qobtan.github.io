@@ -190,7 +190,11 @@ document.addEventListener('change', e => {
   }
 });
 (async () => {
-  if (PIN && await checkPin(PIN).catch(() => false)) {
+  let st = 'net';
+  if (PIN) { try { const rr = await checkPin(PIN); st = rr ? 'ok' : 'bad'; } catch (e) { st = 'net'; } }
+  if (PIN && st === 'net') st = 'ok';
+  if (!(PIN && st === 'ok')) { try { $('#pinmsg').textContent = 'v37 | app:' + (window.AndroidFCM && AndroidFCM.getPin ? 'v3' : 'old/none') + ' | saved:' + (PIN ? 'yes' : 'no') + ' | check:' + st; } catch (e) {} }
+  if (PIN && st === 'ok') {
     $('#pinbox').hidden = true; $('#panel').hidden = false; load(); loadOrders(); adminFcm(); setTimeout(adminFcm, 4000);
   }
 })();
