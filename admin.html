@@ -40,6 +40,32 @@ body{background:#f4f6f9}
 .otot:not([style]) span{color:#fff!important}.otot:not([style]) b{color:#f5c945}
 .stitle{font-size:18px;color:#0b2a4a;font-weight:800;margin:4px 2px 10px}
 .awrap{padding-bottom:96px}
+
+.ochips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;margin:0 -2px;-webkit-overflow-scrolling:touch}
+.ochip{flex:none;border:1px solid #d8c27a;background:#fff;color:#0b2a4a;border-radius:999px;padding:7px 12px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;gap:6px;align-items:center}
+.ochip i{font-style:normal;background:#eef1f6;border-radius:999px;padding:0 7px;font-size:12px;line-height:19px}
+.ochip.on{background:#0b2a4a;color:#f5c945;border-color:#0b2a4a}.ochip.on i{background:#f5c945;color:#0b2a4a}
+.oc{background:#fff;border-radius:16px;padding:14px 14px 12px;margin-top:12px;box-shadow:0 2px 10px rgba(11,42,74,.10);border-inline-start:5px solid #c9d2df;position:relative}
+.oc.st-new{border-inline-start-color:#f5c945;background:linear-gradient(180deg,#fffbea,#fff 55%)}
+.oc.st-confirmed{border-inline-start-color:#4a8be8}.oc.st-shipping{border-inline-start-color:#8a5be8}
+.oc.st-delivered{border-inline-start-color:#1a9a52}.oc.st-canceled{border-inline-start-color:#d93025;opacity:.72}
+.oc-h{display:flex;align-items:center;gap:8px}.oc-id{font-size:17px;color:#0b2a4a}.oc-t{margin-inline-start:auto;font-size:12px;color:#667}
+.oc .bd.s-shipping{background:#e5dcff;color:#4b2bb0}
+.oc-who{font-size:19px;font-weight:800;color:#0b2a4a;margin:8px 0 2px}
+.oc-ad{font-size:13.5px;color:#445;line-height:1.5}
+.oc-ct{display:flex;gap:8px;margin-top:10px}.oc-ct .ob{padding:9px 10px;font-size:14px;direction:ltr}
+.oc-ct .call{flex:2}.oc-ct .wa2{flex:1;direction:rtl}
+.oc-it{margin-top:10px;border:1px solid #e6ebf2;border-radius:12px;padding:0 10px;background:#fafbfd}
+.oc-it summary{cursor:pointer;padding:10px 0;font-size:13.5px;font-weight:700;color:#0b2a4a;list-style:none}
+.oc-it summary::-webkit-details-marker{display:none}.oc-it summary::after{content:' ▾';color:#b8892b}
+.oc-it[open] summary{border-bottom:1px solid #eef1f6}
+.oc-tot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;background:linear-gradient(135deg,#0b2a4a,#143f6c);color:#fff;border-radius:12px;padding:10px 14px}
+.oc-tot .pay{font-size:13px;opacity:.95}.oc-tot .amt{font-size:22px;font-weight:800;color:#f5c945}.oc-tot .amt small{font-size:12px;font-weight:700}
+.oc-fee{font-size:12px;color:#667;margin:5px 4px 0}
+.oc-rt{margin-top:8px;display:flex;gap:10px;align-items:center;background:#fffbea;border:1px solid #f5c945;border-radius:10px;padding:7px 10px;font-size:13px;color:#0b2a4a}.oc-rt b{color:#b8892b;letter-spacing:2px;font-size:15px}
+.oc-next{display:block;width:100%;margin-top:12px;border:0;border-radius:12px;padding:13px;font-family:inherit;font-size:16px;font-weight:800;background:#f5c945;color:#0b2a4a;cursor:pointer;box-shadow:0 2px 0 #c79d1f}.oc-next:disabled{opacity:.5}
+.oc-st{display:flex;align-items:center;gap:8px;margin-top:10px}.oc-st label{font-size:12px;color:#667;white-space:nowrap}.oc-st select{margin:0!important;padding:7px!important;font-size:13px}
+.oc .msg{margin-top:4px;min-height:0}
 </style>
 </head>
 <body>
@@ -102,6 +128,6 @@ body{background:#f4f6f9}
   <button data-sec="products" type="button"><span>🧴</span>المنتجات</button>
   <button data-sec="settings" type="button"><span>⚙️</span>الإعدادات</button>
 </nav>
-<script src="admin.js?v=41"></script>
+<script src="admin.js?v=42"></script>
 </body>
 </html>

@@ -203,7 +203,7 @@ document.addEventListener('change', e => {
   let st = 'net';
   if (PIN) { try { const rr = await checkPin(PIN); st = rr ? 'ok' : 'bad'; } catch (e) { st = 'net'; } }
   if (PIN && st === 'net') st = 'ok';
-  if (!(PIN && st === 'ok')) { try { $('#pinmsg').textContent = 'v41 | app:' + (window.AndroidFCM && AndroidFCM.getPin ? 'v3' : 'old/none') + ' | saved:' + (PIN ? 'yes' : 'no') + ' | check:' + st; } catch (e) {} }
+  if (!(PIN && st === 'ok')) { try { $('#pinmsg').textContent = 'v42 | app:' + (window.AndroidFCM && AndroidFCM.getPin ? 'v3' : 'old/none') + ' | saved:' + (PIN ? 'yes' : 'no') + ' | check:' + st; } catch (e) {} }
   if (PIN && st === 'ok') {
     $('#pinbox').hidden = true; $('#panel').hidden = false; enterPanel(); load(); loadOrders(); adminFcm(); setTimeout(adminFcm, 4000);
   }
@@ -224,34 +224,59 @@ function waCust(phone, o) {
   return 'https://wa.me/' + n + '?text=' + encodeURIComponent(txt);
 }
 async function loadOrders() {
-  const box = $('#orders'); box.innerHTML = '<div class="hint2">بيحمّل...</div>';
+  const box = $('#orders'); if (!box.innerHTML.trim()) box.innerHTML = '<div class="hint2">بيحمّل...</div>';
   const r = await rpc('admin_list_orders', { p_pin: PIN }).catch(() => null);
   if (!r || !r.ok || !Array.isArray(r.data)) { box.innerHTML = '<div class="msg err">مشكلة في تحميل الطلبات</div>'; return; }
   if (!r.data.length) { box.innerHTML = '<div class="hint2">مفيش طلبات لسه.</div>'; return; }
   PIMG = {}; (rows || []).forEach(p => { PIMG[p.id] = p.img; });
   if (!rows.length) { try { const pr = await api('/rest/v1/products?select=id,img'); (await pr.json()).forEach(p => { PIMG[p.id] = p.img; }); } catch (e) {} }
-  const fmtD = s => { const d = new Date(s); return d.toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' }) + ' — ' + d.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit' }); };
-  const counts = { new: 0 }; r.data.forEach(o => { if (o.status === 'new') counts.new++; });
-  { const nb = $('#nbnew'); if (nb) { nb.textContent = counts.new || ''; nb.hidden = !counts.new; } }
-  box.innerHTML = `<div class="hint2" style="margin-top:8px">${r.data.length} طلب — ${counts.new} جديد</div>` + r.data.map(o => {
-    const items = (o.items || []).map(i => `<div class="oit"><img src="${esc(imgOf(i))}" alt=""><div class="oib"><b>${esc(i.name)}</b><span>${+i.qty} × ${+i.price} ج.م</span></div><div class="oil">${(+i.qty) * (+i.price)} ج.م</div></div>`).join('');
-    const qty = (o.items || []).reduce((s, i) => s + (+i.qty || 0), 0);
-    return `<div class="ord ${o.status === 'new' ? 'new' : ''}" data-oid="${o.id}">
-    <div class="ohd"><b>طلب #${o.id}</b><span class="bd s-${esc(o.status)}">${esc(ST[o.status] || o.status)}</span></div>
-    <small>${esc(fmtD(o.created_at))}</small>
-    <div class="ocu"><b>${esc(o.customer_name)}</b><div>📞 ${esc(o.phone)}</div><div>📍 ${esc(o.address)}${o.city ? ' — ' + esc(o.city) : ''}</div></div>
-    <div class="oits">${items}</div>
-    <div class="otot"><span>${qty} قطعة — ${esc(o.payment === 'cash' ? 'كاش عند الاستلام' : o.payment === 'vodafone' ? 'فودافون كاش' : o.payment)}</span><b>الإجمالي ${+o.total} ج.م</b></div>${o.rating?`<div class="otot" style="background:#fffbea;color:#0b2a4a;border:1px solid #f5c945"><span>${esc(o.rating_comment||'')}</span><b style="color:#b8892b;letter-spacing:2px">${'★'.repeat(o.rating)}${'☆'.repeat(5-o.rating)}</b></div>`:''}${+o.delivery_fee?`<div class="otot"><span>المنتجات ${+o.subtotal} + خدمة توصيل ${+o.delivery_fee} ج.م</span><b>🌹</b></div>`:''}
-    <div class="oact"><a class="ob call" href="tel:${esc(o.phone)}">اتصال</a></div>
-    <label class="lbl">حالة الطلب</label>
-    <select class="ost">${Object.keys(ST).map(k => `<option value="${k}" ${k === o.status ? 'selected' : ''}>${ST[k]}</option>`).join('')}</select><div class="msg"></div></div>`;
-  }).join('');
+  ORDS = r.data; renderOrders();
 }
+let ORDS = [], OFIL = 'active';
+const OFILS = [['active', 'شغّالة'], ['new', 'جديد'], ['delivered', 'اتسلّم'], ['canceled', 'ملغي'], ['all', 'الكل']];
+const NEXT = { new: ['confirmed', '✅ تأكيد الطلب'], confirmed: ['shipping', '🚚 خرج للتوصيل'], shipping: ['delivered', '📦 تم التسليم'] };
+function ofilter(o) { return OFIL === 'all' ? true : OFIL === 'active' ? ['new', 'confirmed', 'shipping'].includes(o.status) : o.status === OFIL; }
+function renderOrders() {
+  const box = $('#orders');
+  const data = ORDS;
+  const cnt = k => data.filter(o => k === 'all' ? true : k === 'active' ? ['new', 'confirmed', 'shipping'].includes(o.status) : o.status === k).length;
+  const newN = cnt('new'); { const nb = $('#nbnew'); if (nb) { nb.textContent = newN || ''; nb.hidden = !newN; } }
+  const fmtD = s => { const d = new Date(s); return d.toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' }) + ' · ' + d.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit' }); };
+  const chips = '<div class="ochips">' + OFILS.map(f => `<button type="button" class="ochip ${OFIL === f[0] ? 'on' : ''}" data-f="${f[0]}">${f[1]}<i>${cnt(f[0])}</i></button>`).join('') + '</div>';
+  const list = data.filter(ofilter);
+  const stats = '';
+  box.innerHTML = chips + (list.length ? list.map(o => {
+    const its = o.items || [];
+    const qty = its.reduce((s, i) => s + (+i.qty || 0), 0);
+    const first = its[0] ? esc(its[0].name) : '';
+    const more = its.length > 1 ? ` +${its.length - 1}` : '';
+    const items = its.map(i => `<div class="oit"><img src="${esc(imgOf(i))}" alt=""><div class="oib"><b>${esc(i.name)}</b><span>${+i.qty} × ${+i.price} ج.م</span></div><div class="oil">${(+i.qty) * (+i.price)} ج.م</div></div>`).join('');
+    const pay = o.payment === 'cash' ? '💵 كاش عند الاستلام' : o.payment === 'vodafone' ? '📱 فودافون كاش' : esc(o.payment);
+    const nx = NEXT[o.status];
+    return `<div class="oc st-${esc(o.status)}" data-oid="${o.id}">
+    <div class="oc-h"><b class="oc-id">#${o.id}</b><span class="bd s-${esc(o.status)}">${esc(ST[o.status] || o.status)}</span><span class="oc-t">${esc(fmtD(o.created_at))}</span></div>
+    <div class="oc-who">${esc(o.customer_name)}</div>
+    <div class="oc-ad">📍 ${esc(o.address)}${o.city ? ' — ' + esc(o.city) : ''}</div>
+    <div class="oc-ct"><a class="ob call" href="tel:${esc(o.phone)}">📞 ${esc(o.phone)}</a><a class="ob wa2" href="${esc(waCust(o.phone, o))}" target="_blank" rel="noopener">واتساب</a></div>
+    <details class="oc-it"><summary>🧺 ${qty} قطعة — ${first}${more}</summary>${items}</details>
+    <div class="oc-tot"><span class="pay">${pay}</span><span class="amt">${+o.total} <small>ج.م</small></span></div>
+    ${+o.delivery_fee ? `<div class="oc-fee">منتجات ${+o.subtotal} + خدمة توصيل ${+o.delivery_fee}</div>` : ''}
+    ${o.rating ? `<div class="oc-rt"><b>${'★'.repeat(o.rating)}${'☆'.repeat(5 - o.rating)}</b>${o.rating_comment ? `<span>${esc(o.rating_comment)}</span>` : ''}</div>` : ''}
+    ${nx ? `<button type="button" class="oc-next" data-to="${nx[0]}">${nx[1]}</button>` : ''}
+    <div class="oc-st"><label>تغيير الحالة</label><select class="ost">${Object.keys(ST).map(k => `<option value="${k}" ${k === o.status ? 'selected' : ''}>${ST[k]}</option>`).join('')}</select></div><div class="msg"></div></div>`;
+  }).join('') : '<div class="hint2" style="padding:18px 4px;text-align:center">مفيش طلبات هنا.</div>');
+}
+document.addEventListener('click', e => {
+  const c = e.target.closest && e.target.closest('.ochip');
+  if (c) { OFIL = c.dataset.f; renderOrders(); return; }
+  const n = e.target.closest && e.target.closest('.oc-next');
+  if (n) { const card = n.closest('.oc'); const sel = card.querySelector('.ost'); n.disabled = true; sel.value = n.dataset.to; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+});
 document.addEventListener('change', async e => {
   if (!e.target.classList || !e.target.classList.contains('ost')) return;
   const el = e.target.closest('.ord'); const msg = el.querySelector('.msg');
   const r = await rpc('admin_set_order_status', { p_pin: PIN, p_id: +el.dataset.oid, p_status: e.target.value }).catch(() => null);
-  if (r && r.ok && r.data === true) { msg.className = 'msg ok'; msg.textContent = 'اتحدّث'; el.classList.toggle('new', e.target.value === 'new'); const bd = el.querySelector('.bd'); bd.textContent = ST[e.target.value]; bd.className = 'bd s-' + e.target.value; }
+  if (r && r.ok && r.data === true) { msg.className = 'msg ok'; msg.textContent = 'اتحدّث'; el.classList.toggle('new', e.target.value === 'new'); const bd = el.querySelector('.bd'); bd.textContent = ST[e.target.value]; bd.className = 'bd s-' + e.target.value; setTimeout(loadOrders, 700); }
   else { msg.className = 'msg err'; msg.textContent = 'فشل التحديث'; }
 });
 $('#reloadord').addEventListener('click', loadOrders);
