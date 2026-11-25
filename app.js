@@ -58,9 +58,9 @@ function cartView() {
   <label class="f"><span>رقم التليفون</span><input type="tel" id="f-phone" value="${esc(info.phone)}" autocomplete="tel"></label>
   <label class="f"><span>العنوان بالتفصيل</span><input type="text" id="f-address" value="${esc(info.address)}" autocomplete="street-address"></label>
   <div class="f"><span>طريقة الدفع</span><div class="pay"><b>كاش عند الاستلام</b><s>أونلاين (قريبًا)</s></div></div>
-  <div id="sendbox"></div><div class="note">الطلب بيتبعت على واتساب لمنظفات القبطان، ومش بيتأكد غير لما يرد عليك.</div>`);
+  <div id="sendbox"></div><div class="note">الطلب بيوصل لمنظفات القبطان على طول، ومش بيتأكد غير لما يكلموك.</div>`);
   if (L.length) {
-    const upd = () => { $('#sendbox').innerHTML = ready() ? `<a class="wa" href="${waLink()}" target="_blank" rel="noopener">ابعت الطلب على واتساب</a>` : '<div class="hint">اكتب الاسم والتليفون والعنوان عشان زرار الإرسال يظهر.</div>'; };
+    const upd = () => { $('#sendbox').innerHTML = ready() ? `<button class="wa" id="place" type="button" style="width:100%;border:0;cursor:pointer;font-family:inherit">ابعت الطلب</button><div class="msg-p" id="pmsg" style="text-align:center;margin-top:8px;font-size:13px"></div>` : '<div class="hint">اكتب الاسم والتليفون والعنوان عشان زرار الإرسال يظهر.</div>'; };
     for (const [id, k] of [['f-name', 'name'], ['f-phone', 'phone'], ['f-address', 'address']]) $('#' + id).addEventListener('input', e => { info[k] = e.target.value; store.set('info', info); upd(); });
     upd();
   }
@@ -82,7 +82,27 @@ function openP(id) { det = id; history.pushState({ d: id }, ''); render(); scrol
 function closeP() { det = null; render(); }
 addEventListener('popstate', () => { if (det !== null) closeP(); });
 function render(keepScroll) { badge(); document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab)); const y = scrollY; if (det !== null && tab === 'shop') detailView(PRODUCTS.find(p => p.id === det)); else tab === 'shop' ? shop() : cartView(); if (keepScroll) scrollTo(0, y); }
+async function placeOrder(btn) {
+  if (!ready()) return;
+  const L = lines();
+  const items = L.map(p => ({ id: p.id, name: p.name, qty: cart[p.id], price: p.price }));
+  const msg = $('#pmsg'); btn.disabled = true; btn.textContent = 'بيتبعت...';
+  try {
+    const r = await fetch(SUPA_URL + '/rest/v1/rpc/place_order', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_name: info.name.trim(), p_phone: info.phone.trim(), p_address: info.address.trim(), p_city: 'الفيوم', p_payment: 'cash', p_items: items, p_total: total() }) });
+    const id = await r.json();
+    if (!r.ok || typeof id !== 'number') throw new Error('x');
+    const wl = waLink();
+    cart = {}; store.set('cart', cart); badge();
+    view.innerHTML = `<div class="empty"><b style="font-size:20px">✅ الطلب اتبعت</b><br>رقم طلبك #${id}<br>هنكلمك على رقمك لتأكيد الطلب والتوصيل.<br><a class="wa" href="${wl}" target="_blank" rel="noopener">لو حابب تبعته كمان على واتساب (اختياري)</a><button class="go" data-tab="shop">رجوع للمنتجات</button></div>`;
+  } catch (err) {
+    btn.disabled = false; btn.textContent = 'ابعت الطلب';
+    msg.style.color = '#b3261e'; msg.innerHTML = 'مفيش اتصال أو حصلت مشكلة. جرّب تاني، أو ابعت الطلب على واتساب: <a href="' + waLink() + '" target="_blank" rel="noopener" style="color:#1a9a52;font-weight:700">واتساب</a>';
+  }
+}
 document.addEventListener('click', e => {
+  const pl = e.target.closest('#place');
+  if (pl) { placeOrder(pl); return; }
   const wa = e.target.closest('a.wa');
   if (wa && /Android/i.test(navigator.userAgent)) { e.preventDefault(); location.href = wa.href; return; }
   const t = e.target.closest('button');

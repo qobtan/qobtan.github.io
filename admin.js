@@ -29,7 +29,7 @@ async function enter() {
   if (!ok) { $('#pinmsg').className = 'msg err'; $('#pinmsg').textContent = 'الرقم غلط أو مفيش اتصال'; return; }
   PIN = p; sessionStorage.setItem('adminpin', p);
   $('#pinbox').hidden = true; $('#panel').hidden = false;
-  load();
+  load(); loadOrders();
 }
 
 async function load() {
@@ -182,6 +182,29 @@ document.addEventListener('change', e => {
 });
 (async () => {
   if (PIN && await checkPin(PIN).catch(() => false)) {
-    $('#pinbox').hidden = true; $('#panel').hidden = false; load();
+    $('#pinbox').hidden = true; $('#panel').hidden = false; load(); loadOrders();
   }
 })();
+
+const ST = { new: 'جديد', confirmed: 'اتأكد', delivered: 'اتسلّم', canceled: 'ملغي' };
+async function loadOrders() {
+  const box = $('#orders'); box.innerHTML = '<div class="hint2">بيحمّل...</div>';
+  const r = await rpc('admin_list_orders', { p_pin: PIN }).catch(() => null);
+  if (!r || !r.ok || !Array.isArray(r.data)) { box.innerHTML = '<div class="msg err">مشكلة في تحميل الطلبات</div>'; return; }
+  if (!r.data.length) { box.innerHTML = '<div class="hint2">مفيش طلبات لسه.</div>'; return; }
+  box.innerHTML = r.data.map(o => {
+    const items = (o.items || []).map(i => esc(i.qty + ' × ' + i.name)).join('<br>');
+    const d = new Date(o.created_at).toLocaleString('ar-EG');
+    return `<div class="ord ${o.status === 'new' ? 'new' : ''}" data-oid="${o.id}"><b>طلب #${o.id}</b> — ${esc(ST[o.status] || o.status)}<br><small>${esc(d)}</small><br>
+    <b>${esc(o.customer_name)}</b> — <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a><br>${esc(o.address)}<br>${items}<br><b>الإجمالي: ${+o.total} ج.م</b> (كاش عند الاستلام)
+    <select class="ost">${Object.keys(ST).map(k => `<option value="${k}" ${k === o.status ? 'selected' : ''}>${ST[k]}</option>`).join('')}</select><div class="msg"></div></div>`;
+  }).join('');
+}
+document.addEventListener('change', async e => {
+  if (!e.target.classList || !e.target.classList.contains('ost')) return;
+  const el = e.target.closest('.ord'); const msg = el.querySelector('.msg');
+  const r = await rpc('admin_set_order_status', { p_pin: PIN, p_id: +el.dataset.oid, p_status: e.target.value }).catch(() => null);
+  if (r && r.ok && r.data === true) { msg.className = 'msg ok'; msg.textContent = 'اتحدّث'; el.classList.toggle('new', e.target.value === 'new'); }
+  else { msg.className = 'msg err'; msg.textContent = 'فشل التحديث'; }
+});
+$('#reloadord').addEventListener('click', loadOrders);
