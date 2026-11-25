@@ -141,17 +141,24 @@ loadFee();
   const s = document.createElement('div');
   s.id = 'salatSplash';
   s.setAttribute('style', 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 35%,#123a63,#071b31);transition:opacity .7s ease;opacity:1;cursor:pointer');
-  s.innerHTML = '<div style="text-align:center;padding:24px"><div style="width:70px;height:2px;margin:0 auto 22px;background:#f5c945;border-radius:2px"></div><div style="font-size:34px;font-weight:800;color:#f5c945;line-height:1.7;font-family:inherit">صلّي على النبي محمد ﷺ</div><div style="width:70px;height:2px;margin:22px auto 0;background:#f5c945;border-radius:2px"></div><div style="margin-top:18px;font-size:14px;color:#d9e2ee">منظفات القبطان</div></div>';
+  const bar = '<div style="width:70px;height:2px;margin:0 auto 22px;background:#f5c945;border-radius:2px"></div>';
+  const bar2 = '<div style="width:70px;height:2px;margin:22px auto 0;background:#f5c945;border-radius:2px"></div>';
+  const show = (t, sub) => { s.innerHTML = '<div style="text-align:center;padding:24px">' + bar + '<div style="font-size:32px;font-weight:800;color:#f5c945;line-height:1.7;font-family:inherit">' + t + '</div>' + bar2 + '<div style="margin-top:18px;font-size:14px;color:#d9e2ee">' + sub + '</div></div>'; };
+  show('صلّي على النبي محمد ﷺ', 'منظفات القبطان');
   document.body.appendChild(s);
+  let closed = false, timer = null, started = false;
+  const close = () => { if (closed) return; closed = true; s.style.opacity = '0'; s.style.pointerEvents = 'none'; setTimeout(() => s.remove(), 800); };
+  s.addEventListener('click', close);
   try {
-    const au = new Audio('salat.mp3'); au.preload = 'auto';
-    const go = () => { au.play().catch(() => {}); };
-    au.play().catch(() => {
+    const a1 = new Audio('salat.mp3'), a2 = new Audio('welcome.mp3'); a1.preload = 'auto'; a2.preload = 'auto';
+    a1.onplaying = () => { if (started) return; started = true; clearTimeout(timer); timer = setTimeout(close, 15000); };
+    a1.onended = () => { if (closed) return; setTimeout(() => { if (closed) return; show('أهلاً وسهلاً بكم', 'في منظفات القبطان'); a2.play().catch(() => {}); }, 3000); };
+    a2.onended = () => setTimeout(close, 500);
+    const go = () => { a1.play().catch(() => {}); };
+    a1.play().catch(() => {
       const once = () => { go(); ['pointerdown', 'touchstart', 'keydown'].forEach(t => removeEventListener(t, once, true)); };
       ['pointerdown', 'touchstart', 'keydown'].forEach(t => addEventListener(t, once, true));
     });
   } catch (e) {}
-  const close = () => { s.style.opacity = '0'; s.style.pointerEvents = 'none'; setTimeout(() => s.remove(), 800); };
-  s.addEventListener('click', close);
-  setTimeout(close, 3800);
+  timer = setTimeout(() => { if (!started) close(); }, 3800);
 })();
