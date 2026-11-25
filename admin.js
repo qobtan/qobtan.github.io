@@ -179,19 +179,19 @@ function card(p) {
   <div class="prow">
     ${p.img ? `<img src="${esc(p.img)}" alt="">` : '<img src="logo.jpg" alt="">'}
     <div class="pbody">
-      <label class="lbl" style="margin-top:0">الاسم</label>
-      <input type="text" class="f-name" value="${esc(p.name)}">
+      <button class="photobtn" type="button" data-act="img">📷 تغيير الصورة</button>
+      <span class="hint2 imgstat"></span>
+      <input type="file" class="f-img" accept="image/*" hidden>
     </div>
   </div>
+  <label class="lbl">الاسم</label>
+  <input type="text" class="f-name" value="${esc(p.name)}">
   <label class="lbl">السعر (ج.م)</label>
   <input type="number" class="f-price" min="0" step="1" value="${+p.price || 0}">
   <label class="lbl">تفاصيل قصيرة (مثال: 4 لتر) — اختياري</label>
   <input type="text" class="f-detail" value="${esc(p.detail || '')}">
   <label class="lbl">وصف المنتج</label>
   <textarea class="f-intro" rows="7" placeholder="اكتب وصف المنتج هنا. كل سطر هيظهر لوحده للعميل، وابدأ السطر بعلامة ✓ لو عايزه نقطة.">${esc(desc)}</textarea>
-  <input type="file" class="f-img" accept="image/*" hidden>
-  <button class="filebtn" type="button" data-act="img">تغيير الصورة من الموبايل</button>
-  <span class="hint2 imgstat"></span>
   <button class="abtn" type="button" data-act="save">حفظ التعديلات</button>
   <button class="abtn danger" type="button" data-act="del">حذف المنتج</button>
   <div class="msg"></div>
@@ -269,15 +269,16 @@ function shrinkImage(file) {
 async function uploadImg(el, file) {
   const id = +el.dataset.id;
   const stat = el.querySelector('.imgstat');
-  stat.textContent = ' بيترفع...';
+  stat.className = 'hint2 imgstat'; stat.textContent = 'بيترفع...';
   const url = await shrinkImage(file);
-  if (!url) { stat.textContent = ' الصورة مش مدعومة'; return; }
+  if (url) { const pi = el.querySelector('.prow img'); if (pi) pi.src = url; }
+  if (!url) { stat.textContent = 'الصورة مش مدعومة'; return; }
   const r2 = await rpc('admin_update_product', { p_pin: PIN, p_id: id, p_img: url }).catch(() => null);
   if (r2 && r2.ok && Array.isArray(r2.data) && r2.data.length) {
-    stat.textContent = ' الصورة اتحدثت';
+    stat.textContent = '✅ الصورة اتغيرت واتحفظت';
     const img = el.querySelector('.prow img'); if (img) img.src = url;
     const row = rows.find(x => x.id === id); if (row) row.img = url;
-  } else stat.textContent = ' فشل حفظ الصورة — اتأكد من الرقم السري';
+  } else stat.textContent = '❌ فشل حفظ الصورة — جرّب تاني';
 }
 
 async function changePin() {
