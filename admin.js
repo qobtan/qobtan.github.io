@@ -382,7 +382,7 @@ function renderOrders() {
   const chips = '<div class="ochips">' + OFILS.map(f => `<button type="button" class="ochip ${OFIL === f[0] ? 'on' : ''}" data-f="${f[0]}">${f[1]}<i>${cnt(f[0])}</i></button>`).join('') + '</div>';
   const list = data.filter(ofilter);
   const stats = '';
-  box.innerHTML = '<button class="abtn sec" id="mo-open" type="button" style="margin:0 0 10px">+ أوردر يدوي (طلب من برّه التطبيق)</button>' + chips + (list.length ? list.map(o => {
+  box.innerHTML = chips + (list.length ? list.map(o => {
     const its = o.items || [];
     const qty = its.reduce((s, i) => s + (+i.qty || 0), 0);
     const first = its[0] ? esc(its[0].name) : '';
