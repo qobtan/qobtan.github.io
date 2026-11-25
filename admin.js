@@ -1,7 +1,8 @@
 const SUPA_URL = 'https://aiqfiiuozweqbqlgivqj.supabase.co';
 const SUPA_ANON = 'sb_publishable_POz8lTd9lNj2xId7tzghHQ_dkEbX3n9';
 const $ = s => document.querySelector(s);
-let PIN = localStorage.getItem('adminpin') || '';
+const nat = { get: () => { try { return (window.AndroidFCM && AndroidFCM.getPin) ? AndroidFCM.getPin() : ''; } catch (e) { return ''; } }, set: v => { try { if (window.AndroidFCM && AndroidFCM.savePin) AndroidFCM.savePin(v); } catch (e) {} } };
+let PIN = localStorage.getItem('adminpin') || nat.get() || '';
 let rows = [];
 
 const H = () => ({ apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'x-admin-pin': PIN });
@@ -35,7 +36,7 @@ async function enter() {
   if (!p) { $('#pinmsg').textContent = 'اكتب الرقم السري'; return; }
   const ok = await checkPin(p).catch(() => false);
   if (!ok) { $('#pinmsg').className = 'msg err'; $('#pinmsg').textContent = 'الرقم غلط أو مفيش اتصال'; return; }
-  PIN = p; localStorage.setItem('adminpin', p);
+  PIN = p; localStorage.setItem('adminpin', p); nat.set(p);
   $('#pinbox').hidden = true; $('#panel').hidden = false;
   load(); loadOrders(); adminFcm(); setTimeout(adminFcm, 4000);
 }
@@ -166,13 +167,13 @@ async function changePin() {
     body: JSON.stringify({ old_pin: o, new_pin: n })
   });
   const ok = r.ok && (await r.json()) === true;
-  if (ok) { PIN = n; localStorage.setItem('adminpin', n); m.className = 'msg ok'; m.textContent = 'الرقم اتغير — خده بالرقم الجديد'; $('#oldpin').value = ''; $('#newpin').value = ''; }
+  if (ok) { PIN = n; localStorage.setItem('adminpin', n); nat.set(n); m.className = 'msg ok'; m.textContent = 'الرقم اتغير — خده بالرقم الجديد'; $('#oldpin').value = ''; $('#newpin').value = ''; }
   else { m.className = 'msg err'; m.textContent = 'الرقم الحالي غلط'; }
 }
 
 $('#enter').addEventListener('click', enter);
 $('#pin').addEventListener('keydown', e => { if (e.key === 'Enter') enter(); });
-$('#logout').addEventListener('click', () => { localStorage.removeItem('adminpin'); location.reload(); });
+$('#logout').addEventListener('click', () => { localStorage.removeItem('adminpin'); nat.set(''); location.reload(); });
 $('#addnew').addEventListener('click', addNew);
 $('#changepin').addEventListener('click', changePin);
 document.addEventListener('click', e => {
