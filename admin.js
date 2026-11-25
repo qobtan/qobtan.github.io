@@ -25,14 +25,111 @@ async function checkPin(p) {
 
 
 function showSec(s) {
-  if (!['orders', 'products', 'settings'].includes(s)) s = 'orders';
+  if (!['orders', 'products', 'profit', 'settings'].includes(s)) s = 'orders';
   document.querySelectorAll('.tabsec').forEach(e => e.classList.toggle('on', e.id === 'sec-' + s));
   document.querySelectorAll('#bnav button').forEach(b => b.classList.toggle('on', b.dataset.sec === s));
   try { localStorage.setItem('admsec', s); } catch (e) {}
   window.scrollTo(0, 0);
 }
-document.querySelectorAll('#bnav button').forEach(b => b.addEventListener('click', () => { showSec(b.dataset.sec); if (b.dataset.sec === 'orders') loadOrders(); }));
-function enterPanel() { $('#bnav').hidden = false; showSec((new URLSearchParams(location.search).get('tab')) || 'orders'); }
+document.querySelectorAll('#bnav button').forEach(b => b.addEventListener('click', () => { showSec(b.dataset.sec); if (b.dataset.sec === 'orders') loadOrders(); if (b.dataset.sec === 'profit') loadProfit(); }));
+function enterPanel() { $('#bnav').hidden = false; const s0 = (new URLSearchParams(location.search).get('tab')) || 'orders'; showSec(s0); if (s0 === 'profit') loadProfit(); }
+
+// ===== الأرباح =====
+let PF = { orders: [], costs: {}, dcost: 0, per: 'today' };
+const cairoDay = d => new Date(d).toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' });
+const addDays = (k, n) => { const d = new Date(k + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+const egp = n => (Math.round(n * 100) / 100).toLocaleString('en-US') + ' ج.م';
+function orderCalc(o) {
+  let sales = 0, cost = 0, missing = 0, qty = 0;
+  (o.items || []).forEach(i => {
+    const q = +i.qty || 0, p = +i.price || 0; qty += q; sales += q * p;
+    const c = PF.costs[String(i.id)];
+    if (c === undefined) { missing++; } else { cost += q * (+c); }
+  });
+  const fee = +o.delivery_fee || 0;
+  return { sales, cost, fee, dcost: PF.dcost, missing, qty, profit: sales - cost + fee - PF.dcost };
+}
+function periodRange(per) {
+  const t = cairoDay(new Date());
+  if (per === 'today') return [t, t];
+  if (per === 'yday') { const y = addDays(t, -1); return [y, y]; }
+  if (per === 'week') return [addDays(t, -6), t];
+  return [t.slice(0, 8) + '01', t];
+}
+function sumRange(from, to, statuses) {
+  const r = { n: 0, sales: 0, cost: 0, fee: 0, dcost: 0, profit: 0, missing: 0, qty: 0, prod: {} };
+  PF.orders.forEach(o => {
+    const k = cairoDay(o.created_at);
+    if (k < from || k > to || !statuses.includes(o.status)) return;
+    const c = orderCalc(o); r.n++; r.sales += c.sales; r.cost += c.cost; r.fee += c.fee; r.dcost += c.dcost; r.profit += c.profit; r.missing += c.missing; r.qty += c.qty;
+    (o.items || []).forEach(i => { r.prod[i.name] = (r.prod[i.name] || 0) + (+i.qty || 0); });
+  });
+  return r;
+}
+async function loadProfit() {
+  const box = $('#profit');
+  if (!box.dataset.ready) box.innerHTML = '<div class="hint2">بيحسب...</div>';
+  const [o, c] = await Promise.all([rpc('admin_list_orders', { p_pin: PIN }).catch(() => null), rpc('admin_get_costs', { p_pin: PIN }).catch(() => null)]);
+  if (!o || !o.ok || !Array.isArray(o.data) || !c || !c.ok || !c.data) { box.innerHTML = '<div class="msg err">مشكلة في تحميل الحسابات — جرّب تاني</div>'; return; }
+  PF.orders = o.data; PF.costs = c.data.costs || {}; PF.dcost = +c.data.delivery_cost || 0;
+  if (!(rows && rows.length)) { try { const pr = await api('/rest/v1/products?select=id,name,price&order=sort.asc'); rows = await pr.json(); } catch (e) {} }
+  box.dataset.ready = '1'; renderProfit();
+}
+function renderProfit() {
+  const box = $('#profit'); const per = PF.per;
+  const [from, to] = periodRange(per);
+  const done = sumRange(from, to, ['delivered']);
+  const pend = sumRange(from, to, ['new', 'confirmed', 'shipping']);
+  const days = (new Date(to + 'T12:00:00Z') - new Date(from + 'T12:00:00Z')) / 864e5 + 1;
+  const pf = addDays(from, -days), pt = addDays(from, -1);
+  const prev = sumRange(pf, pt, ['delivered']);
+  const margin = done.sales + done.fee > 0 ? done.profit / (done.sales + done.fee) * 100 : 0;
+  const missingProducts = (rows || []).filter(p => PF.costs[String(p.id)] === undefined);
+  let cls = 'none', vt = 'لسه مفيش طلبات اتسلّمت في الفترة دي', vs = 'أول ما تسلّم طلب هيظهر مكسبه هنا';
+  if (done.n) {
+    if (done.profit <= 0) { cls = 'bad'; vt = 'خسران ❌ راجع الأسعار والتكلفة'; }
+    else if (margin < 15) { cls = 'warn'; vt = 'مكسبك قليل ⚠️ فكّر ترفّع الأسعار شوية'; }
+    else { cls = 'good'; vt = 'شغلك ماشي صح ✅ كمّل'; }
+    vs = done.n + ' طلب اتسلّم · نسبة المكسب ' + Math.round(margin) + '%';
+  }
+  const cmpTxt = per === 'today' || per === 'yday' ? 'إمبارح' : 'الفترة اللي قبلها';
+  const cmp = prev.n || done.n ? (done.profit >= prev.profit ? '▲ أحسن من ' : '▼ أقل من ') + cmpTxt + ' (' + egp(prev.profit) + ')' : '';
+  const today = cairoDay(new Date()); const bars = [];
+  let mx = 1; for (let i = 6; i >= 0; i--) { const k = addDays(today, -i); const s = sumRange(k, k, ['delivered']); bars.push([k, s.profit]); mx = Math.max(mx, Math.abs(s.profit)); }
+  const dn = k => new Date(k + 'T12:00:00Z').toLocaleDateString('ar-EG', { weekday: 'short', timeZone: 'UTC' });
+  const top = Object.entries(done.prod).sort((x, y) => y[1] - x[1]).slice(0, 3);
+  const chips = [['today', 'النهاردة'], ['yday', 'إمبارح'], ['week', 'آخر ٧ أيام'], ['month', 'الشهر ده']].map(f => `<button type="button" class="ochip ${per === f[0] ? 'on' : ''}" data-pf="${f[0]}">${f[1]}</button>`).join('');
+  box.innerHTML = `<div class="pchips">${chips}</div>
+  <div class="pv ${cls}"><div class="vt">${vt}</div><div class="vp">${egp(done.profit)}</div><div class="vs">${vs}</div>${cmp ? `<div class="vs" style="margin-top:6px">${cmp}</div>` : ''}</div>
+  ${missingProducts.length ? `<div class="pwarn">⚠️ ناقص تكلفة ${missingProducts.length} منتج، فالمكسب مش دقيق. اكتب سعر الشراء لكل منتج من القسم اللي تحت.</div>` : ''}
+  <div class="pgrid">
+    <div class="pst"><span>المبيعات</span><b>${egp(done.sales)}</b></div>
+    <div class="pst"><span>تكلفة البضاعة</span><b>${egp(done.cost)}</b></div>
+    <div class="pst"><span>خدمة التوصيل (من العملاء)</span><b>${egp(done.fee)}</b></div>
+    <div class="pst"><span>تكلفة التوصيل عليك</span><b>${egp(done.dcost)}</b></div>
+    <div class="pst"><span>قطع اتباعت</span><b>${done.qty}</b></div>
+    <div class="pst"><span>لسه ماتسلمتش</span><b>${pend.n} طلب</b><span>مكسب متوقع ${egp(pend.profit)}</span></div>
+  </div>
+  <div class="pcard"><b style="font-size:14px;color:#0b2a4a">مكسب آخر ٧ أيام</b>
+    <div class="pbars">${bars.map(b => `<div class="pbar"><em>${b[1] ? Math.round(b[1]) : ''}</em><i class="${b[1] < 0 ? 'neg' : ''}" style="height:${Math.max(2, Math.abs(b[1]) / mx * 90)}%"></i><span>${dn(b[0])}</span></div>`).join('')}</div></div>
+  ${top.length ? `<div class="pcard"><b style="font-size:14px;color:#0b2a4a">الأكتر مبيعًا في الفترة</b>${top.map((t, i) => `<div class="crow"><div class="cn">${i + 1}. ${esc(t[0])}</div><b>${t[1]} قطعة</b></div>`).join('')}</div>` : ''}
+  <div class="pcard"><b style="font-size:15px;color:#0b2a4a">سعر الشراء (التكلفة) لكل منتج</b>
+    <div class="hint2" style="margin:4px 0 8px">اكتب كام بتشتري القطعة. بيتحفظ لوحده. الحسابات بتتحسب على التكلفة الحالية.</div>
+    ${(rows || []).map(p => { const c = PF.costs[String(p.id)]; return `<div class="crow"><div class="cn">${esc(p.name)}<small>سعر البيع ${+p.price} ج.م</small></div><input type="number" inputmode="decimal" min="0" class="cin ${c === undefined ? 'miss' : ''}" data-cid="${p.id}" value="${c === undefined ? '' : +c}" placeholder="التكلفة"></div>`; }).join('')}
+    <div class="crow" style="border-top:2px solid #f5c945;margin-top:6px"><div class="cn">تكلفة التوصيل عليك للطلب<small>اللي بتدفعه للمندوب أو البنزين. صفر لو مفيش.</small></div><input type="number" inputmode="decimal" min="0" class="cin" data-cid="delivery" value="${PF.dcost}"></div>
+  </div>`;
+}
+document.addEventListener('click', e => { const c = e.target.closest && e.target.closest('[data-pf]'); if (c) { PF.per = c.dataset.pf; renderProfit(); } });
+document.addEventListener('change', async e => {
+  const el = e.target; if (!el.classList || !el.classList.contains('cin')) return;
+  const id = el.dataset.cid; const v = el.value === '' ? null : +el.value;
+  if (v === null || isNaN(v) || v < 0) return;
+  el.classList.remove('miss', 'ok');
+  const r = id === 'delivery' ? await rpc('admin_set_delivery_cost', { p_pin: PIN, p_cost: v }).catch(() => null) : await rpc('admin_set_cost', { p_pin: PIN, p_id: +id, p_cost: v }).catch(() => null);
+  if (r && r.ok && r.data === true) { if (id === 'delivery') PF.dcost = v; else PF.costs[id] = v; el.classList.add('ok'); clearTimeout(PF.t); PF.t = setTimeout(() => { const keep = window.scrollY; renderProfit(); window.scrollTo(0, keep); }, 1200); }
+  else { el.style.borderColor = '#d93025'; }
+});
+
 async function adminFcm() {
   try {
     if (!window.AndroidFCM || !PIN) return;
@@ -203,7 +300,7 @@ document.addEventListener('change', e => {
   let st = 'net';
   if (PIN) { try { const rr = await checkPin(PIN); st = rr ? 'ok' : 'bad'; } catch (e) { st = 'net'; } }
   if (PIN && st === 'net') st = 'ok';
-  if (!(PIN && st === 'ok')) { try { $('#pinmsg').textContent = 'v42 | app:' + (window.AndroidFCM && AndroidFCM.getPin ? 'v3' : 'old/none') + ' | saved:' + (PIN ? 'yes' : 'no') + ' | check:' + st; } catch (e) {} }
+  if (!(PIN && st === 'ok')) { try { $('#pinmsg').textContent = 'v44 | app:' + (window.AndroidFCM && AndroidFCM.getPin ? 'v3' : 'old/none') + ' | saved:' + (PIN ? 'yes' : 'no') + ' | check:' + st; } catch (e) {} }
   if (PIN && st === 'ok') {
     $('#pinbox').hidden = true; $('#panel').hidden = false; enterPanel(); load(); loadOrders(); adminFcm(); setTimeout(adminFcm, 4000);
   }
@@ -268,7 +365,7 @@ function renderOrders() {
 }
 document.addEventListener('click', e => {
   const c = e.target.closest && e.target.closest('.ochip');
-  if (c) { OFIL = c.dataset.f; renderOrders(); return; }
+  if (c && c.dataset.f) { OFIL = c.dataset.f; renderOrders(); return; }
   const n = e.target.closest && e.target.closest('.oc-next');
   if (n) { const card = n.closest('.oc'); const sel = card.querySelector('.ost'); n.disabled = true; sel.value = n.dataset.to; sel.dispatchEvent(new Event('change', { bubbles: true })); }
 });
