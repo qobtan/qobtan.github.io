@@ -38,8 +38,8 @@ function ctl(p) {
     : `<div class="step"><button data-dec="${p.id}" aria-label="نقص">−</button><bdi>${n}</bdi><button data-inc="${p.id}" aria-label="زود">+</button></div>`;
 }
 function cardHtml(p) {
-  return `<div class="card${(cart[p.id] || 0) > 0 ? ' in' : ''}" data-open="${p.id}"><div class="pw">${p.img ? `<img src="${p.img}" alt="${esc(p.name)}">` : '<div class="ph"></div>'}${p.detail && p.price > 0 ? `<span class="tag">${esc(p.detail)}</span>` : ''}</div>
-  <div class="t">${esc(p.name)}</div><div class="more">التفاصيل ‹</div><div class="pr">${p.price > 0 ? `<b>${p.price}</b> ج.م` : '<span class="soon">السعر قريبًا</span>'}</div>${ctl(p)}</div>`;
+  return `<div class="card${(cart[p.id] || 0) > 0 ? ' in' : ''}" data-open="${p.id}"><div class="pw">${p.img ? `<img src="${p.img}" alt="${esc(p.name)}">` : '<div class="ph"></div>'}</div>
+  <div class="t">${esc(p.name)}</div>${p.detail && p.price > 0 ? `<div class="sz">${esc(p.detail)}</div>` : ''}<div class="more">التفاصيل ‹</div><div class="pr">${p.price > 0 ? `<b>${p.price}</b> ج.م` : '<span class="soon">السعر قريبًا</span>'}</div>${ctl(p)}</div>`;
 }
 function shop() {
   view.innerHTML = `<div class="search"><input type="search" id="q" placeholder="دوّر على منتج..." value="${esc(q)}"></div>
