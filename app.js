@@ -13,7 +13,7 @@ let info = store.get('info', { name: '', phone: '', address: '' });
 let tab = /tab=orders/.test(location.search) ? 'orders' : 'shop', q = '', det = null;
 const money = n => n + ' ج.م';
 let FEE = store.get('fee', 25);
-let CREDIT = 0, CREDPH = '';
+let CREDIT = 0, CREDPH = '', REVS = store.get('revs', null);
 const disc = () => CREDIT > 0 ? FEE : 0;
 const grand = () => total() + FEE - disc();
 const rp = async (n, b) => { try { const r = await fetch(SUPA_URL + '/rest/v1/rpc/' + n, { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify(b) }); return r.ok ? await r.json() : null; } catch (e) { return null; } };
@@ -374,7 +374,7 @@ document.addEventListener('click', e => {
 document.addEventListener('change', e => { if (e.target.id === 'f-phone') { info.phone = e.target.value; store.set('info', info); CREDPH = ''; loadCredit(); } });
 
 /* ===== آراء عملائنا ===== */
-let REVS = store.get('revs', null);
+
 const starsH = n => '<span class="rv-st">' + '★'.repeat(n) + '<i>' + '★'.repeat(5 - n) + '</i></span>';
 function revHtml() {
   if (!REVS || !REVS.count) return '';
