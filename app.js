@@ -147,7 +147,7 @@ async function placeOrder(btn) {
   const items = L.map(p => ({ id: p.id, name: p.name, qty: cart[p.id], price: p.price }));
   const msg = $('#pmsg'); btn.disabled = true; btn.textContent = 'بيتبعت...';
   try {
-    const r = await fetch(SUPA_URL + '/rest/v1/rpc/place_order', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' },
+    const r = await fetch(SUPA_URL + '/rest/v1/rpc/place_order_v2', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' },
       body: JSON.stringify({ p_name: info.name.trim(), p_phone: info.phone.trim(), p_address: info.address.trim(), p_city: 'الفيوم', p_payment: PAY, p_items: items, p_total: grand() }) });
     const res = await r.json();
     const id = res && res.id;
