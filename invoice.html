@@ -1,34 +1,39 @@
 <!doctype html>
 <html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
 <title>فاتورة - منظفات القبطان</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Aref+Ruqaa:wght@700&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box}body{margin:0;background:#e9edf3;font-family:Cairo,system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;color:#0b2a4a;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}body{margin:0;background:#dfe5ee;font-family:Cairo,system-ui,"Segoe UI",Tahoma,sans-serif;color:#0b2a4a;-webkit-font-smoothing:antialiased}
 .wrap{max-width:560px;margin:0 auto;padding:12px}
-.inv{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 6px 24px rgba(11,42,74,.16);position:relative}
-.hd{background:linear-gradient(135deg,#071c35,#0f3459 60%,#123a63);color:#f5c945;text-align:center;padding:26px 14px 20px;position:relative}
-.hd:after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:linear-gradient(90deg,#b8891f,#f5c945,#fff3b0,#f5c945,#b8891f)}
-.hd img{width:92px;height:92px;border-radius:50%;border:3px solid #f5c945;object-fit:cover;box-shadow:0 0 0 5px rgba(245,201,69,.18),0 6px 16px rgba(0,0,0,.35);background:#fff}
-.hd h1{margin:12px 0 2px;font-size:26px;font-weight:800;letter-spacing:.3px}.hd p{margin:0;font-size:13px;color:#cfdbea;letter-spacing:1px}
-.ttl{display:flex;align-items:center;gap:10px;margin:20px 18px 0;color:#0b2a4a;font-weight:800;font-size:19px}
-.ttl:before,.ttl:after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,#d4a82c)}
-.ttl span{padding:0 4px}
-.bd{padding:14px 18px 8px}
-.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-.meta div{background:#f6f8fb;border-radius:10px;padding:9px 12px;font-size:12px;color:#5a6c80}.meta b{display:block;font-size:17px;color:#0b2a4a;font-weight:800;margin-top:1px}
-.box{border-right:4px solid #f5c945;background:#fbfcfe;border-radius:6px 10px 10px 6px;padding:10px 14px;font-size:14px;line-height:1.9;margin-bottom:14px;border-top:1px solid #edf0f5;border-bottom:1px solid #edf0f5;border-left:1px solid #edf0f5}
-.box small{display:block;color:#8a98a9;font-size:11px;letter-spacing:.5px}.box b{font-size:16px}
-table{width:100%;border-collapse:collapse;font-size:14px;border-radius:10px;overflow:hidden}
-th{background:#0b2a4a;color:#f5c945;padding:10px 8px;text-align:right;font-size:12.5px;font-weight:700}
-td{padding:11px 8px;border-bottom:1px solid #eef1f6;font-weight:600}tbody tr:nth-child(even) td{background:#f8fafc}
-td.n,th.n{text-align:center;white-space:nowrap}td.i,th.i{text-align:center;width:28px;color:#8a98a9;font-weight:600}
-.tot{margin-top:14px;font-size:14.5px}.tot div{display:flex;justify-content:space-between;padding:6px 4px;color:#33465c}.tot b{color:#0b2a4a}
-.tot .g{background:linear-gradient(135deg,#071c35,#123a63);color:#f5c945;border-radius:12px;padding:14px 16px;margin-top:8px;font-size:20px;font-weight:800;border:1px solid #d4a82c}
+.inv{background:#fffdf8;border-radius:6px;overflow:hidden;box-shadow:0 10px 34px rgba(7,28,53,.25);position:relative;isolation:isolate}
+.inv:before{content:"";position:absolute;inset:0;background:url(logo.jpg) center 58%/78% no-repeat;opacity:.045;z-index:-1;filter:grayscale(1)}
+.hd{background:#071c35;background-image:radial-gradient(circle at 15% 0,rgba(245,201,69,.18),transparent 45%),radial-gradient(circle at 90% 100%,rgba(245,201,69,.12),transparent 40%),repeating-linear-gradient(45deg,rgba(245,201,69,.05) 0 2px,transparent 2px 14px);color:#f5c945;text-align:center;padding:30px 14px 26px;position:relative}
+.hd:after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(90deg,#9c7314,#f5c945,#fff3b0,#f5c945,#9c7314)}
+.hd img{width:104px;height:104px;border-radius:50%;border:3px solid #f5c945;object-fit:cover;box-shadow:0 0 0 6px rgba(245,201,69,.16),0 0 0 7px rgba(245,201,69,.5),0 10px 22px rgba(0,0,0,.45);background:#fff}
+.hd h1{margin:16px 0 0;font-family:"Aref Ruqaa",Cairo,serif;font-size:36px;line-height:1.2;font-weight:700;color:#f5c945;text-shadow:0 2px 8px rgba(0,0,0,.4)}
+.hd p{margin:6px 0 0;font-size:13px;color:#c9d6e6;letter-spacing:3px;font-weight:600}
+.orn{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;color:#f5c945;font-size:10px}.orn:before,.orn:after{content:"";width:60px;height:1px;background:linear-gradient(90deg,transparent,#f5c945)}.orn:after{transform:scaleX(-1)}
+.ttl{display:flex;align-items:center;justify-content:space-between;margin:20px 20px 0}
+.ttl h2{margin:0;font-size:24px;font-weight:900;color:#0b2a4a;position:relative;padding-right:14px}.ttl h2:before{content:"";position:absolute;right:0;top:6px;bottom:6px;width:5px;border-radius:3px;background:linear-gradient(#f5c945,#b8891f)}
+.num{background:#071c35;color:#f5c945;border-radius:30px;padding:5px 18px;font-weight:800;font-size:17px;border:1.5px solid #d4a82c;letter-spacing:.5px}
+.bd{padding:14px 20px 6px}
+.cards{display:grid;grid-template-columns:1.35fr 1fr;gap:10px;margin-bottom:16px}
+.card{border:1px solid #eadfbf;background:rgba(255,255,255,.7);border-radius:10px;padding:10px 13px;font-size:13px;line-height:1.85;color:#44566b}
+.card small{display:block;color:#a8801f;font-size:11px;font-weight:800;letter-spacing:1px;margin-bottom:2px}
+.card b{display:block;color:#0b2a4a;font-size:15.5px;font-weight:800}.card .v{color:#0b2a4a;font-weight:700}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px;border:1px solid #eadfbf;border-radius:10px;overflow:hidden}
+th{background:#071c35;color:#f5c945;padding:11px 8px;text-align:right;font-size:12.5px;font-weight:800}
+td{padding:12px 8px;border-bottom:1px solid #f0e8d0;font-weight:700;background:rgba(255,255,255,.55)}tbody tr:nth-child(even) td{background:rgba(250,244,226,.7)}tbody tr:last-child td{border-bottom:0}
+td.n,th.n{text-align:center;white-space:nowrap}td.i,th.i{text-align:center;width:30px;color:#a8801f;font-weight:800}
+.low{display:grid;grid-template-columns:104px 1fr;gap:14px;margin-top:16px;align-items:stretch}
+.qr{border:1px solid #eadfbf;border-radius:10px;background:#fff;text-align:center;padding:8px 6px 6px;font-size:10.5px;color:#6b7a8c;font-weight:700;line-height:1.3}.qr img{width:84px;height:84px;display:block;margin:0 auto 4px}
+.tot{font-size:14.5px}.tot div{display:flex;justify-content:space-between;padding:6px 4px;color:#44566b;border-bottom:1px dashed #e5d9b6}.tot b{color:#0b2a4a;font-weight:800}
+.tot .g{background:#071c35;background-image:linear-gradient(135deg,#071c35,#123a63);color:#f5c945;border-radius:10px;padding:13px 14px;margin-top:8px;font-size:19px;font-weight:900;border:1.5px solid #d4a82c;box-shadow:inset 0 0 0 3px #071c35,inset 0 0 0 4px rgba(245,201,69,.45)}
 .tot .g b,.tot .g span{color:#f5c945}
-.pay{margin-top:10px;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#5a6c80;padding:0 4px}.pay b{background:#fff6d6;color:#7a5a00;border:1px solid #f0d27a;border-radius:20px;padding:3px 12px;font-size:13px}
-.ft{text-align:center;padding:16px 14px 18px;margin-top:10px;background:#f6f8fb;font-size:14px;color:#33465c;position:relative}
-.ft:before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#b8891f,#f5c945,#fff3b0,#f5c945,#b8891f)}
-.ft b{color:#0b2a4a;font-size:15px}.ft small{display:block;margin-top:4px;color:#8a98a9;letter-spacing:1px;font-size:12px}
+.pay{margin-top:12px;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#5a6c80;padding:0 4px}.pay b{background:#fff3cc;color:#6e5000;border:1px solid #e9c964;border-radius:20px;padding:3px 14px;font-size:13px}
+.ft{text-align:center;padding:18px 14px 20px;margin-top:16px;background:#071c35;color:#c9d6e6;font-size:13px;position:relative}
+.ft:before{content:"";position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#9c7314,#f5c945,#fff3b0,#f5c945,#9c7314)}
+.ft b{display:block;color:#f5c945;font-size:17px;font-weight:800;margin-top:4px}.ft .c{margin-top:8px;direction:ltr;font-weight:700;letter-spacing:.5px;color:#fff}.ft small{display:block;margin-top:6px;color:#f5c945;letter-spacing:3px;font-size:11px;opacity:.85}
 .btns{display:flex;gap:8px;margin-top:12px}.btns button{flex:1;border:0;border-radius:12px;padding:13px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;background:#f5c945;color:#0b2a4a}
 .msg{text-align:center;padding:40px 10px;color:#6b7a8c}
 @media print{@page{margin:8mm}body{background:#fff}.btns{display:none}.inv{box-shadow:none;border-radius:0}.wrap{padding:0;max-width:none}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
@@ -37,24 +42,26 @@ td.n,th.n{text-align:center;white-space:nowrap}td.i,th.i{text-align:center;width
 const U='https://aiqfiiuozweqbqlgivqj.supabase.co',K='sb_publishable_POz8lTd9lNj2xId7tzghHQ_dkEbX3n9';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>(Math.round(n*100)/100).toLocaleString('en-US')+' ج.م';
-const q=new URLSearchParams(location.search);
+const q=new URLSearchParams(location.search);const DEMO=q.get('demo')==='1';
 (async()=>{
   const app=document.getElementById('app');
   try{
-    const r=await fetch(U+'/rest/v1/rpc/get_invoice',{method:'POST',headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json'},body:JSON.stringify({p_id:+q.get('id'),p_token:q.get('t')})});
-    const o=r.ok?await r.json():null;
+    const r=DEMO?null:await fetch(U+'/rest/v1/rpc/get_invoice',{method:'POST',headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json'},body:JSON.stringify({p_id:+q.get('id'),p_token:q.get('t')})});
+    const o=DEMO?{id:1042,customer_name:'أحمد محمد',phone:'01012345678',address:'شارع الجمهورية، بجوار مسجد النور',city:'الفيوم',payment:'cod',delivery_fee:25,total:185,created_at:new Date().toISOString(),items:[{name:'سائل جلي ليمون 1 لتر',qty:2,price:45},{name:'مطهر أرضيات 2 لتر',qty:1,price:70}]}:(r.ok?await r.json():null);
     if(!o){app.innerHTML='<div class="msg">الفاتورة مش موجودة أو اللينك غلط.</div>';return;}
     const its=o.items||[];const sub=its.reduce((s,i)=>s+(+i.qty||0)*(+i.price||0),0);
     const fee=+o.delivery_fee||Math.max(0,(+o.total||0)-sub);
     const d=new Date(o.created_at).toLocaleDateString('ar-EG',{day:'numeric',month:'long',year:'numeric',timeZone:'Africa/Cairo'});
     const pay=o.payment==='vodafone'?'فودافون كاش':'كاش عند الاستلام';
-    app.innerHTML=`<div class="inv"><div class="hd"><img src="logo.jpg" alt=""><h1>منظفات القبطان</h1><p>نظافة .. ثقة .. جودة</p></div><div class="ttl"><span>فاتورة بيع</span></div><div class="bd">
-    <div class="meta"><div>رقم الفاتورة<b>#${o.id}</b></div><div>التاريخ<b style="font-size:15px">${esc(d)}</b></div></div>
-    <div class="box"><small>فاتورة إلى</small><b>${esc(o.customer_name)}</b><br>📞 ${esc(o.phone)}<br>📍 ${esc(o.address)}${o.city?' - '+esc(o.city):''}</div>
+    app.innerHTML=`<div class="inv"><div class="hd"><img src="logo.jpg" alt=""><h1>منظفات القبطان</h1><p>نظافة .. ثقة .. جودة</p><div class="orn">◆ ◆ ◆</div></div>
+    <div class="ttl"><h2>فاتورة بيع</h2><div class="num">#${o.id}</div></div><div class="bd">
+    <div class="cards"><div class="card"><small>فاتورة إلى</small><b>${esc(o.customer_name)}</b><span class="v">📞 ${esc(o.phone)}</span><br>📍 ${esc(o.address)}${o.city?' - '+esc(o.city):''}</div>
+    <div class="card"><small>تاريخ الفاتورة</small><b style="font-size:14px">${esc(d)}</b><small style="margin-top:6px">رقم الفاتورة</small><b>#${o.id}</b></div></div>
     <table><thead><tr><th class="i">#</th><th>الصنف</th><th class="n">الكمية</th><th class="n">السعر</th><th class="n">الإجمالي</th></tr></thead><tbody>${its.map((i,k)=>`<tr><td class="i">${k+1}</td><td>${esc(i.name)}</td><td class="n">${+i.qty}</td><td class="n">${+i.price}</td><td class="n">${(+i.qty)*(+i.price)}</td></tr>`).join('')}</tbody></table>
-    <div class="tot"><div><span>إجمالي المنتجات</span><b>${money(sub)}</b></div><div><span>خدمة التوصيل</span><b>${money(fee)}</b></div><div class="g"><span>الإجمالي المطلوب</span><span>${money(+o.total)}</span></div></div><div class="pay"><span>طريقة الدفع</span><b>${pay}</b></div>
-    </div><div class="ft"><b>شكراً لثقتك في منظفات القبطان 🌹</b><small>نظافة .. ثقة .. جودة</small></div></div>
-    <div class="btns"><button type="button" id="bk" style="background:#0b2a4a;color:#f5c945;flex:.6">← رجوع</button><button type="button" id="pr">🖨️ طباعة / PDF</button><button type="button" id="im">🖼️ حفظ كصورة</button></div>`;
+    <div class="low"><div class="qr"><img src="qr.svg" alt="">واتساب<br>القبطان</div><div class="tot"><div><span>إجمالي المنتجات</span><b>${money(sub)}</b></div><div><span>خدمة التوصيل</span><b>${money(fee)}</b></div><div class="g"><span>الإجمالي المطلوب</span><span>${money(+o.total)}</span></div></div></div>
+    <div class="pay"><span>طريقة الدفع</span><b>${pay}</b></div>
+    </div><div class="ft">شكراً لثقتك بنا<b>منظفات القبطان 🌹</b><div class="c">WhatsApp: 01028540358</div><small>نظافة .. ثقة .. جودة</small></div></div>
+    <div class="btns"><button type="button" id="bk" style="background:#071c35;color:#f5c945;flex:.6">← رجوع</button><button type="button" id="pr">🖨️ طباعة / PDF</button><button type="button" id="im">🖼️ حفظ كصورة</button></div>`;
     document.title='فاتورة #'+o.id+' - منظفات القبطان';
     document.getElementById('im').onclick=async()=>{const b=document.getElementById('im');b.textContent='بيجهّز...';try{if(!window.html2canvas){await new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';s.onload=ok;s.onerror=no;document.head.appendChild(s);});}const cv=await html2canvas(document.querySelector('.inv'),{scale:3,backgroundColor:'#ffffff',useCORS:true});const a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download='invoice-'+o.id+'.png';document.body.appendChild(a);a.click();a.remove();b.textContent='🖼️ حفظ كصورة';}catch(e){b.textContent='مش اشتغلت، استخدم طباعة / PDF';}};
     document.getElementById('bk').onclick=function(){history.length>1?history.back():(location.href='admin.html')};
