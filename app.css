@@ -135,3 +135,16 @@ body{background-image:none !important}
 .card{background:#f6f8fb;border:1.5px solid #d9a93a}
 .empty,.hint,.note{color:#cdd9ea}
 .sum,.l2{color:#14202e}
+
+/* ===== readability v47 ===== */
+.thx{color:#fff !important;font-size:17px !important;font-weight:700 !important;text-shadow:0 1px 6px rgba(0,0,0,.35)}
+#muteBtn{top:auto !important;bottom:96px !important;left:10px !important;background:rgba(7,27,49,.85) !important}
+main>.back,.back{color:#f6d77b}
+.dt{color:#fff}.dp{color:#dbe6f5}.dp b{color:#f6d77b}
+.desc,.dd{color:#eef3fa}
+.f>span{color:#e3ecf8}
+.hint,.note,.empty{color:#eef3fa}
+.empty b{color:#fff}
+.shr{background:#f6f8fb;color:#0b2a4a}
+.msg-p{color:#f6d77b}
+.ck i{background:#2bc16a}
