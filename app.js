@@ -246,6 +246,7 @@ async function liveProducts() {
   } catch (e) {}
 }
 liveProducts();
+(function () { try { let did = localStorage.getItem('did'); if (!did) { did = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 12)); localStorage.setItem('did', did); } fetch(SUPA_URL + '/rest/v1/rpc/app_ping', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_id: did }) }).catch(() => {}); } catch (e) {} })();
 loadFee();
 
 /* bgm */

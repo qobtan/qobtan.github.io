@@ -735,3 +735,12 @@ document.addEventListener('click', async e => {
   if (t.dataset.riid) { const r = await rpc('admin_rimg_status', { p_pin: PIN, p_id: +t.dataset.riid, p_status: t.dataset.rist }).catch(() => null); if (r && r.ok) loadRev(); return; }
   if (t.dataset.ridel) { if (!confirm('تمسح الصورة دي؟')) return; const r = await rpc('admin_rimg_del', { p_pin: PIN, p_id: +t.dataset.ridel }).catch(() => null); if (r && r.ok) loadRev(); }
 });
+
+async function loadUsage() {
+  const box = $('#usagebox'); if (!box) return;
+  const r = await rpc('admin_app_stats', { p_pin: PIN }).catch(() => null);
+  if (!(r && r.ok && r.data && typeof r.data === 'object')) { box.innerHTML = ''; return; }
+  const s = r.data; const since = s.since ? new Date(s.since).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' }) : 'دلوقتي';
+  box.innerHTML = `<div class="ubox"><h3>📱 استخدام تطبيق العملاء</h3><div class="ugrid"><div><b>${+s.total || 0}</b><span>أجهزة فتحت التطبيق (الإجمالي)</span></div><div><b>${+s.today || 0}</b><span>فتحوه النهارده</span></div><div><b>${+s.week || 0}</b><span>فتحوه آخر ٧ أيام</span></div><div><b>${+s.ordered || 0}</b><span>عملاء عملوا أوردر</span></div></div><p>الرقم بيعد الأجهزة (كل جهاز = رقم مجهول عشوائي، من غير أي بيانات شخصية) اللي فتحت التطبيق أو الموقع. العدّ بدأ ${since}، فاللي فتحوه قبل كده مش محسوبين. نفس الشخص لو فتحه من موبايلين يتعد مرتين.</p></div>`;
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('#bnav [data-sec=more], [data-go=more]'); if (b) setTimeout(loadUsage, 50); });
