@@ -394,8 +394,8 @@ function renderOrders() {
     <div class="oc-h"><b class="oc-id">#${o.id}</b><span class="bd s-${esc(o.status)}">${esc(ST[o.status] || o.status)}</span><span class="oc-t">${esc(fmtD(o.created_at))}</span></div>
     <div class="oc-who">${esc(o.customer_name)}</div>
     <div class="oc-ad">📍 ${esc(o.address)}${o.city ? ' — ' + esc(o.city) : ''}</div>
-    <div class="oc-ct"><a class="ob call" href="tel:${esc(o.phone)}">📞 ${esc(o.phone)}</a><a class="ob wa2" href="${esc(waCust(o.phone, o))}" target="_blank" rel="noopener">واتساب</a></div>
-    <div class="oc-ct oc-inv"><a class="ob inv" href="${esc(invUrl(o))}" target="_blank" rel="noopener">🧾 فاتورة</a><a class="ob wa2" href="${esc(waInv(o))}" target="_blank" rel="noopener">ابعت الفاتورة واتساب</a></div>
+    <div class="oc-ct"><a class="ob call" href="tel:${esc(o.phone)}">📞 ${esc(o.phone)}</a><a class="ob wa2" href="${esc(waCust(o.phone, o))}">واتساب</a></div>
+    <div class="oc-ct oc-inv"><a class="ob inv" href="${esc(invUrl(o))}">🧾 فاتورة</a><a class="ob wa2" href="${esc(waInv(o))}">ابعت الفاتورة واتساب</a></div>
     <details class="oc-it"><summary>🧺 ${qty} قطعة — ${first}${more}</summary>${items}</details>
     <div class="oc-tot"><span class="pay">${pay}</span><span class="amt">${+o.total} <small>ج.م</small></span></div>
     ${+o.delivery_fee ? `<div class="oc-fee">منتجات ${+o.subtotal} + خدمة توصيل ${+o.delivery_fee}</div>` : ''}
@@ -568,7 +568,7 @@ function renderCustomers() {
   const medal = i => i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
   const body = list.length ? list.map(c => { const i = all.indexOf(c); return `<div class="pcard cust"><div class="mh"><b>${medal(i)} ${esc(c.name)}</b><span class="mrem">${c.n} طلب</span></div>
     <div class="msub">اشترى بـ ${egp(c.spent)} · آخر طلب ${esc(fd(c.last))}${c.n > 1 ? ' · عميل راجع 🔁' : ''}</div>
-    <div class="oc-ct"><a class="ob call" href="tel:${esc(c.phone)}">📞 ${esc(c.phone)}</a><a class="ob wa2" href="${esc(waCust(c.phone, c.o))}" target="_blank" rel="noopener">واتساب</a></div></div>`; }).join('') : '<div class="pempty">مفيش عملاء لسه. أول ما حد يطلب هيظهر هنا.</div>';
+    <div class="oc-ct"><a class="ob call" href="tel:${esc(c.phone)}">📞 ${esc(c.phone)}</a><a class="ob wa2" href="${esc(waCust(c.phone, c.o))}">واتساب</a></div></div>`; }).join('') : '<div class="pempty">مفيش عملاء لسه. أول ما حد يطلب هيظهر هنا.</div>';
   if ($('#csearch') && document.activeElement && document.activeElement.id === 'csearch') { $('#clist').innerHTML = body; return; }
   $('#custbox').innerHTML = `<div class="pgrid"><div class="pst"><span>عدد العملاء</span><b>${all.length}</b></div><div class="pst"><span>رجعوا طلبوا تاني</span><b>${rep}</b></div></div>
   <div class="ptools"><input type="search" id="csearch" placeholder="🔍 دوّر باسم أو رقم" value="${esc(qv)}"></div><div id="clist">${body}</div>`;
@@ -652,8 +652,8 @@ document.addEventListener('click', async e => {
     if (r && r.ok && r.data && r.data.id) {
       const o = { id: r.data.id, token: r.data.token, customer_name: name, phone };
       $('#moedit .pcard').innerHTML = `<div class="stitle" style="text-align:center">✅ الأوردر #${o.id} اتعمل</div><div class="msub" style="text-align:center">الإجمالي ${egp(+r.data.total)} · مفيش إشعار اتبعت لحد</div>
-        <a class="abtn" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box" href="${esc(invUrl(o))}" target="_blank" rel="noopener">🧾 افتح الفاتورة</a>
-        <a class="abtn sec" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box;background:#1a9a52;color:#fff" href="${esc(waInv(o))}" target="_blank" rel="noopener">ابعت الفاتورة واتساب</a>
+        <a class="abtn" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box" href="${esc(invUrl(o))}">🧾 افتح الفاتورة</a>
+        <a class="abtn sec" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box;background:#1a9a52;color:#fff" href="${esc(waInv(o))}">ابعت الفاتورة واتساب</a>
         <button class="abtn danger" type="button" id="mo-close" style="background:#eef1f6;color:#0b2a4a">تمام، رجوع للطلبات</button>`;
     } else { t.disabled = false; m.className = 'msg err'; m.textContent = 'فشل إنشاء الأوردر — جرّب تاني'; }
   }
