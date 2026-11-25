@@ -98,7 +98,7 @@ async function placeOrder(btn) {
     if (!r.ok || typeof id !== 'number') throw new Error('x');
     const wl = waLink(); const gt = grand(); try { if (localStorage.getItem('mute') !== '1') { const oa = new Audio('order.mp3'); oa.play().catch(() => {}); } } catch (e) {}
     cart = {}; store.set('cart', cart); badge();
-    view.innerHTML = `<div class="empty"><b style="font-size:20px">✅ الطلب اتبعت</b><br>رقم طلبك #${id}<br>الإجمالي ${money(gt)} (شامل التوصيل)<br>${THX}<br>هنكلمك على رقمك لتأكيد الطلب والتوصيل.<br><a class="wa" href="${wl}" target="_blank" rel="noopener">لو حابب تبعته كمان على واتساب (اختياري)</a><button class="go" data-tab="shop">رجوع للمنتجات</button></div>`;
+    view.innerHTML = `<div class="empty"><b style="font-size:20px">✅ الطلب اتبعت</b><br>رقم طلبك #${id}<br>الإجمالي ${money(gt)} (شامل التوصيل)<br>${THX}<br>هنكلمك على رقمك لتأكيد الطلب والتوصيل.<br><button class="go" data-tab="shop">رجوع للمنتجات</button></div>`;
   } catch (err) {
     btn.disabled = false; btn.textContent = 'ابعت الطلب';
     msg.style.color = '#b3261e'; msg.innerHTML = 'مفيش اتصال أو حصلت مشكلة. جرّب تاني، أو ابعت الطلب على واتساب: <a href="' + waLink() + '" target="_blank" rel="noopener" style="color:#1a9a52;font-weight:700">واتساب</a>';
