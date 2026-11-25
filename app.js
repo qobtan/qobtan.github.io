@@ -233,7 +233,7 @@ const BGM_ON = true;
 function startBgm() {
   if (!BGM_ON) return;
   try {
-    if (!BG) { BG = new Audio('bgm.mp3'); BG.loop = true; BG.volume = 0.12; }
+    if (!BG) { BG = new Audio('bgm.mp3'); BG.loop = true; BG.volume = 0.25; }
     if (bgmMuted()) { BG.pause(); return; }
     BG.play().catch(() => {});
   } catch (e) {}
