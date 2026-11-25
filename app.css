@@ -254,3 +254,13 @@ main>.back,.back{color:#8a5f0a !important;font-weight:700}
 .invc,.invs div,.invp{box-shadow:0 2px 10px rgba(11,42,74,.08)}
 .ord,.oc{box-shadow:0 2px 10px rgba(11,42,74,.08)}
 .hero .dt,.hero .dlv .dt,.dlv .dt{color:#f6e7b4 !important}
+
+/* v70: frameless cards on white */
+.card,.card.in{background:transparent !important;border:0 !important;box-shadow:none !important;border-radius:0 !important;overflow:visible !important;padding:0 0 14px !important;gap:5px !important}
+.card .pw img,.card .pw .ph{border-radius:18px !important}
+.card .t,.card .more,.card .pr,.card .sz,.card .soon{margin-left:2px !important;margin-right:2px !important}
+.card .sz{margin-top:-1px !important}
+.card .step,.card .add{width:100% !important;margin-left:0 !important;margin-right:0 !important}
+.card .pr b{text-shadow:none !important}
+.dimg{border:0 !important;box-shadow:none !important;background:transparent !important}
+.grid{gap:14px 12px !important}
