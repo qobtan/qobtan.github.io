@@ -407,10 +407,11 @@ function loadRevData() {
     if (!on || busy) return; on = false;
     if (dy < TH) { ind.style.transition = 'transform .25s,opacity .25s'; set(0); setTimeout(() => { ind.style.transition = ''; }, 300); return; }
     busy = true; ind.style.transition = 'transform .2s'; set(TH - 20, 'بيتحدّث...'); ind.classList.add('go');
-    try { const rg = await navigator.serviceWorker.getRegistrations(); await Promise.all(rg.map(r => r.update().catch(() => {}))); } catch (e) {}
-    try { const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); } catch (e) {}
-    try { const rg = await navigator.serviceWorker.getRegistrations(); await Promise.all(rg.map(r => r.unregister())); } catch (e) {}
-    setTimeout(() => location.reload(), 350);
+    const t0 = Date.now();
+    try { loadRevData.busy = false; CREDPH = ''; const jobs = [liveProducts(), loadFee(), loadRevData(), loadMyOrders()]; try { jobs.push(navigator.serviceWorker.getRegistrations().then(rg => Promise.all(rg.map(r => r.update().catch(() => {}))))); } catch (e) {} await Promise.race([Promise.all(jobs.map(p => Promise.resolve(p).catch(() => {}))), new Promise(r => setTimeout(r, 6000))]); } catch (e) {}
+    const left = 800 - (Date.now() - t0); if (left > 0) await new Promise(r => setTimeout(r, left));
+    sp.textContent = 'تم التحديث ✓'; ind.classList.remove('go'); await new Promise(r => setTimeout(r, 450));
+    ind.style.transition = 'transform .3s,opacity .3s'; set(0); setTimeout(() => { ind.style.transition = ''; busy = false; }, 350);
   };
   addEventListener('touchend', end, { passive: true }); addEventListener('touchcancel', end, { passive: true });
 })();
