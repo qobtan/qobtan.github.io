@@ -117,3 +117,14 @@ body{background:linear-gradient(180deg,#e9eff8 0,#f5f7fb 360px,#f7f9fc 100%) fix
 .add{box-shadow:0 4px 12px rgba(217,169,58,.4)}
 .bar{border:1px solid #d9a93a}
 .dimg{border:1.5px solid #e8dcb8;box-shadow:0 8px 22px rgba(11,42,74,.10)}
+
+/* ===== mid-tone v42 ===== */
+.sec{display:none}
+html{background:#aebbd0}
+body{background:linear-gradient(180deg,#9fb0ca 0,#b4c1d6 360px,#bcc8db 100%) fixed}
+.card{background:#f1f4f9;border:1px solid #d9b95c;box-shadow:0 8px 22px rgba(7,28,53,.22)}
+.pw img,.pw .ph{background:#fff;border:1.5px solid #e3cd88}
+.search input{background:#f1f4f9;border:1.5px solid #c7d1e0}
+.tabs{background:#f1f4f9}
+.empty,.hint,.note{color:#3d4f68}
+.dimg{background:#fff}
