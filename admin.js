@@ -227,7 +227,7 @@ function card(p) {
   <label class="lbl">السعر (ج.م)</label>
   <input type="number" class="f-price" min="0" step="1" value="${+p.price || 0}">
   <label class="lbl">القسم</label>
-  <select class="f-cat"><option value="منظفات"${(p.cat || 'منظفات') === 'منظفات' ? ' selected' : ''}>🧴 منظفات</option><option value="عطور"${p.cat === 'عطور' ? ' selected' : ''}>🌸 عطور</option></select>
+  <select class="f-cat"><option value="منظفات"${(p.cat || 'منظفات') === 'منظفات' ? ' selected' : ''}>🧴 منظفات</option><option value="عطور"${p.cat === 'عطور' ? ' selected' : ''}>🪔 عطور وبخور</option></select>
   <label class="lbl">تفاصيل قصيرة (مثال: 4 لتر) — اختياري</label>
   <input type="text" class="f-detail" value="${esc(p.detail || '')}">
   <label class="lbl">المخزون (عدد القطع الموجودة) — بيظهرلك إنت بس</label>

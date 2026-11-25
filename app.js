@@ -44,7 +44,7 @@ function cardHtml(p) {
 }
 function shop() {
   view.innerHTML = `<div class="search"><input type="search" id="q" placeholder="دوّر على منتج..." value="${esc(q)}"></div>
-  <div class="cats" id="cats">${['منظفات', 'عطور'].map(c => `<button type="button" class="cat${CAT === c ? ' on' : ''}" data-cat="${c}">${c === 'منظفات' ? '🧴 ' : c === 'عطور' ? '🌸 ' : ''}${c}</button>`).join('')}</div><div class="sec"><span>منتجاتنا</span><em id="cnt"></em></div><div class="grid" id="grid"></div><div id="empty"></div>${count() ? `<div class="bar"><div><span>${count()} قطعة</span><b>${money(total())}</b></div><button class="go" data-tab="cart">كمّل الطلب</button></div>` : ''}`;
+  <div class="cats" id="cats">${['منظفات', 'عطور'].map(c => `<button type="button" class="cat${CAT === c ? ' on' : ''}" data-cat="${c}">${c === 'منظفات' ? 'منظفات 🧴' : 'عطور وبخور 🪔'}</button>`).join('')}</div><div class="sec"><span>منتجاتنا</span><em id="cnt"></em></div><div class="grid" id="grid"></div><div id="empty"></div>${count() ? `<div class="bar"><div><span>${count()} قطعة</span><b>${money(total())}</b></div><button class="go" data-tab="cart">كمّل الطلب</button></div>` : ''}`;
   shopGrid();
   $('#q').addEventListener('input', e => { q = e.target.value; shopGrid(); });
   $('#cats').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (!b) return; CAT = b.dataset.cat; document.querySelectorAll('#cats .cat').forEach(x => x.classList.toggle('on', x.dataset.cat === CAT)); shopGrid(); });
