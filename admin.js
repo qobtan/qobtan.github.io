@@ -678,8 +678,11 @@ async function loadRev() {
   const box = $('#revbox'); if (!$('#rv-name')) box.innerHTML = '<div class="hint2">بيحمّل...</div>';
   const r = await rpc('admin_reviews_list', { p_pin: PIN }).catch(() => null);
   if (!r || !r.ok || !r.data || !Array.isArray(r.data.reviews)) { box.innerHTML = '<div class="msg err">مشكلة في التحميل — جرّب تاني</div>'; return; }
+  const ri = await rpc('admin_rimg_list', { p_pin: PIN }).catch(() => null); const IM = ri && ri.ok && Array.isArray(ri.data) ? ri.data : [];
   const R = r.data.reviews, P = r.data.pending, shown = R.filter(x => x.status === 'approved').length;
   box.innerHTML = `<div class="hint2" style="margin:0 4px 8px">اللي بيظهر للعملاء بس الآراء المعتمدة (${shown}). تقييمات العملاء من التطبيق مش بتظهر لحد ما تعتمدها. بيظهر الاسم الأول بس.</div>
+  <div class="pcard"><div class="lbl" style="font-weight:800">📷 صور آراء العملاء (سكرين شوت واتساب)</div><div class="hint2">اختار صور من المعرض. بتظهر للعملاء في معرض "آراء عملائنا" وتتفتح كبيرة بالضغط.</div><label class="abtn" style="display:block;text-align:center;cursor:pointer;box-sizing:border-box">+ ارفع صور من المعرض<input type="file" id="rv-file" accept="image/*" multiple style="display:none"></label><div class="msg" id="rv-fmsg"></div>
+  <div class="rgt">${IM.length ? IM.map(x => `<div class="rgi ${x.status === 'approved' ? '' : 'off'}"><img src="${x.data}" alt=""><div><button type="button" class="mbtn" data-rist="${x.status === 'approved' ? 'hidden' : 'approved'}" data-riid="${x.id}">${x.status === 'approved' ? 'إخفاء' : 'إظهار'}</button><button type="button" class="mbtn" data-ridel="${x.id}">مسح</button></div></div>`).join('') : '<div class="hint2">لسه مفيش صور.</div>'}</div></div>
   <details class="pcard matform"><summary>+ ضيف رأي وصلك (واتساب مثلًا)</summary>
     <label class="lbl">اسم العميل</label><input type="text" id="rv-name" placeholder="مثال: أم محمد">
     <label class="lbl">التقييم</label><div class="ochips" id="rv-st">${[5, 4, 3, 2, 1].map(n => `<button type="button" class="ochip ${REVSTAR === n ? 'on' : ''}" data-rvs="${n}">${n} ★</button>`).join('')}</div>
@@ -697,4 +700,16 @@ document.addEventListener('click', async e => {
   if (t.dataset.rvo) { const r = await rpc('admin_review_from_order', { p_pin: PIN, p_order_id: +t.dataset.rvo, p_status: t.dataset.rvst }).catch(() => null); if (r && r.ok) loadRev(); return; }
   if (t.dataset.rvid) { const r = await rpc('admin_review_status', { p_pin: PIN, p_id: +t.dataset.rvid, p_status: t.dataset.rvst }).catch(() => null); if (r && r.ok) loadRev(); return; }
   if (t.dataset.rvdel) { if (!confirm('تمسح الرأي ده؟')) return; const r = await rpc('admin_review_del', { p_pin: PIN, p_id: +t.dataset.rvdel }).catch(() => null); if (r && r.ok) loadRev(); }
+});
+
+const rvCompress = f => new Promise((ok, no) => { const u = URL.createObjectURL(f), im = new Image(); im.onload = () => { const k = Math.min(1, 1000 / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u); let q = 0.75, d = c.toDataURL('image/jpeg', q); while (d.length > 800000 && q > 0.3) { q -= 0.1; d = c.toDataURL('image/jpeg', q); } ok(d); }; im.onerror = () => no(); im.src = u; });
+document.addEventListener('change', async e => {
+  if (!e.target || e.target.id !== 'rv-file') return; const fs = [...e.target.files], m = $('#rv-fmsg'); if (!fs.length) return; let n = 0;
+  for (const f of fs) { m.className = 'msg'; m.textContent = 'بيرفع ' + (n + 1) + ' من ' + fs.length + '...'; try { const d = await rvCompress(f); const r = await rpc('admin_rimg_add', { p_pin: PIN, p_data: d }); if (r && r.ok && r.data === true) n++; } catch (x) {} }
+  loadRev(); setTimeout(() => { const m2 = $('#rv-fmsg'); if (m2) { m2.className = n ? 'msg ok' : 'msg err'; m2.textContent = n ? 'اترفع ' + n + ' صورة' : 'فشل الرفع — جرّب تاني'; } }, 600);
+});
+document.addEventListener('click', async e => {
+  const t = e.target.closest && e.target.closest('button'); if (!t) return;
+  if (t.dataset.riid) { const r = await rpc('admin_rimg_status', { p_pin: PIN, p_id: +t.dataset.riid, p_status: t.dataset.rist }).catch(() => null); if (r && r.ok) loadRev(); return; }
+  if (t.dataset.ridel) { if (!confirm('تمسح الصورة دي؟')) return; const r = await rpc('admin_rimg_del', { p_pin: PIN, p_id: +t.dataset.ridel }).catch(() => null); if (r && r.ok) loadRev(); }
 });

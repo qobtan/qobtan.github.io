@@ -13,7 +13,7 @@ let info = store.get('info', { name: '', phone: '', address: '' });
 let tab = /tab=orders/.test(location.search) ? 'orders' : 'shop', q = '', det = null;
 const money = n => n + ' ج.م';
 let FEE = store.get('fee', 25);
-let CREDIT = 0, CREDPH = '', REVS = store.get('revs', null);
+let CREDIT = 0, CREDPH = '', REVS = store.get('revs', null), IMGS = store.get('rimgs', []), IMGD = {};
 const disc = () => CREDIT > 0 ? FEE : 0;
 const grand = () => total() + FEE - disc();
 const rp = async (n, b) => { try { const r = await fetch(SUPA_URL + '/rest/v1/rpc/' + n, { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify(b) }); return r.ok ? await r.json() : null; } catch (e) { return null; } };
@@ -377,13 +377,19 @@ document.addEventListener('change', e => { if (e.target.id === 'f-phone') { info
 
 const starsH = n => '<span class="rv-st">' + '★'.repeat(n) + '<i>' + '★'.repeat(5 - n) + '</i></span>';
 function revHtml() {
-  if (!REVS || !REVS.count) return '';
+  const hasT = REVS && REVS.count, hasI = IMGS && IMGS.length; if (!hasT && !hasI) return '';
   const dt = x => { try { return new Date(x).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' }); } catch (e) { return ''; } };
-  return '<div class="rv"><div class="rv-h"><h3>آراء عملائنا</h3><div class="rv-a"><b>' + REVS.avg + '</b> ' + starsH(Math.round(REVS.avg)) + '<small>من ' + REVS.count + ' تقييم</small></div></div><div class="rv-l">'
-    + REVS.items.map(r => '<div class="rv-c">' + starsH(r.rating) + (r.comment ? '<p>' + esc(r.comment) + '</p>' : '') + '<small>' + esc(r.name) + ' · ' + dt(r.created_at) + '</small></div>').join('') + '</div></div>';
+  let h = '<div class="rv">';
+  if (hasT) h += '<div class="rv-h"><h3>آراء عملائنا</h3><div class="rv-a"><b>' + REVS.avg + '</b> ' + starsH(Math.round(REVS.avg)) + '<small>من ' + REVS.count + ' تقييم</small></div></div><div class="rv-l">' + REVS.items.map(r => '<div class="rv-c">' + starsH(r.rating) + (r.comment ? '<p>' + esc(r.comment) + '</p>' : '') + '<small>' + esc(r.name) + ' · ' + dt(r.created_at) + '</small></div>').join('') + '</div>';
+  else h += '<div class="rv-h"><h3>آراء عملائنا</h3></div>';
+  if (hasI) h += (hasT ? '<div class="rg-t">صور من رسايل عملائنا</div>' : '') + '<div class="rg">' + IMGS.map(id => '<button type="button" class="rg-b" data-rimg="' + id + '"><img alt="رأي عميل" data-rid="' + id + '"' + (IMGD[id] ? ' src="' + IMGD[id] + '"' : '') + '></button>').join('') + '</div>';
+  return h + '</div>';
 }
+function fillImgs() { document.querySelectorAll('#revs img[data-rid]').forEach(im => { const id = im.dataset.rid; if (IMGD[id]) { if (!im.src) im.src = IMGD[id]; return; } if (im.dataset.ld) return; im.dataset.ld = 1; rp('get_review_img', { p_id: +id }).then(v => { if (typeof v === 'string' && v) { IMGD[id] = v; im.src = v; } }); }); }
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-rimg]'); if (!b) return; const src = IMGD[b.dataset.rimg] || (b.querySelector('img') || {}).src; if (!src) return; const o = document.createElement('div'); o.setAttribute('style', 'position:fixed;inset:0;z-index:99999;background:rgba(7,27,49,.94);display:flex;align-items:center;justify-content:center;padding:12px;cursor:zoom-out'); o.innerHTML = '<img src="' + src + '" style="max-width:100%;max-height:100%;border-radius:12px;box-shadow:0 0 0 2px #d9a93a">'; o.onclick = () => o.remove(); document.body.appendChild(o); });
 function showRevs() {
-  const el = $('#revs'); if (el) el.innerHTML = revHtml();
+  const el = $('#revs'); if (el) { el.innerHTML = revHtml(); fillImgs(); }
   if (showRevs.busy) return; showRevs.busy = true;
+  rp('get_review_imgs', {}).then(l => { if (Array.isArray(l)) { const o = JSON.stringify(IMGS); IMGS = l; store.set('rimgs', l); if (JSON.stringify(l) !== o) { const e3 = $('#revs'); if (e3 && tab === 'shop' && det === null) { e3.innerHTML = revHtml(); fillImgs(); } } } });
   rp('get_reviews', {}).then(r => { showRevs.busy = false; if (r && typeof r.count === 'number') { const old = JSON.stringify(REVS); REVS = r; store.set('revs', r); if (JSON.stringify(r) !== old) { const e2 = $('#revs'); if (e2 && tab === 'shop' && det === null) e2.innerHTML = revHtml(); } } });
 }
