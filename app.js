@@ -79,7 +79,6 @@ function detailView(p) {
   const n = cart[p.id] || 0;
   const rows = [['السعر', p.price > 0 ? money(p.price) : 'هيتأكد قريبًا']];
   if (p.detail) rows.push(['تفاصيل', p.detail]);
-  rows.push(['الدفع', 'كاش عند الاستلام']);
   view.innerHTML = `<button class="back" data-back="1">› رجوع للمنتجات</button>
   <div class="dimg">${p.img ? `<img src="${p.img}" alt="${esc(p.name)}">` : '<div class="ph"></div>'}</div>
   <h2 class="dt">${esc(p.name)}</h2><div class="dp">${p.price > 0 ? `<b>${p.price}</b> ج.م` : '<span class="soon">السعر قريبًا</span>'}</div>
