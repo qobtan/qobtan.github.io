@@ -220,6 +220,19 @@ async function liveProducts() {
 liveProducts();
 loadFee();
 
+/* bgm */
+let BG = null;
+function bgmMuted() { try { return localStorage.getItem('mute') === '1'; } catch (e) { return false; } }
+function startBgm() {
+  try {
+    if (!BG) { BG = new Audio('bgm.mp3'); BG.loop = true; BG.volume = 0.12; }
+    if (bgmMuted()) { BG.pause(); return; }
+    BG.play().catch(() => {});
+  } catch (e) {}
+}
+function bgmSync() { if (!BG) return; if (bgmMuted()) BG.pause(); else BG.play().catch(() => {}); }
+(function () { const f = () => { if (document.getElementById('salatSplash')) return; startBgm(); ['pointerdown', 'touchstart', 'keydown'].forEach(t => removeEventListener(t, f, true)); }; ['pointerdown', 'touchstart', 'keydown'].forEach(t => addEventListener(t, f, true)); })();
+document.addEventListener('visibilitychange', () => { if (!BG) return; if (document.hidden) BG.pause(); else bgmSync(); });
 /* salatSplash */
 (function () {
   const s = document.createElement('div');
@@ -231,13 +244,13 @@ loadFee();
   show('صلّي على النبي محمد ﷺ', 'منظفات القبطان');
   document.body.appendChild(s);
   let closed = false, timer = null, started = false;
-  const close = () => { if (closed) return; closed = true; s.style.opacity = '0'; s.style.pointerEvents = 'none'; setTimeout(() => s.remove(), 800); };
+  const close = () => { if (closed) return; closed = true; if (started) setTimeout(startBgm, 0); s.style.opacity = '0'; s.style.pointerEvents = 'none'; setTimeout(() => s.remove(), 800); };
   s.addEventListener('click', close);
   try {
     const a1 = new Audio('salat.mp3'), a2 = new Audio('welcome.mp3'); a1.preload = 'auto'; a2.preload = 'auto';
     a1.onplaying = () => { if (started) return; started = true; clearTimeout(timer); timer = setTimeout(close, 15000); };
-    a1.onended = () => { setTimeout(() => { if (!closed) show('أهلاً وسهلاً بكم', 'في منظفات القبطان'); a2.play().catch(() => {}); }, 3000); };
-    a2.onended = () => setTimeout(close, 500);
+    a1.onended = () => { if (!closed) show('أهلاً وسهلاً بكم', 'في منظفات القبطان'); a2.play().catch(() => {}); };
+    a2.onended = () => { setTimeout(close, 500); startBgm(); };
     const go = () => { a1.play().catch(() => {}); };
     a1.play().catch(() => {
       const once = () => { go(); ['pointerdown', 'touchstart', 'keydown'].forEach(t => removeEventListener(t, once, true)); };
@@ -290,7 +303,7 @@ loadFee();
   m.setAttribute('style', 'position:fixed;top:10px;left:10px;z-index:50;width:34px;height:34px;border-radius:50%;border:1px solid rgba(245,201,69,.6);background:rgba(7,27,49,.55);color:#f5c945;font-size:16px;line-height:1;padding:0;cursor:pointer');
   const paint = () => { m.textContent = muted ? '🔇' : '🔊'; };
   paint();
-  m.addEventListener('click', () => { muted = !muted; try { localStorage.setItem('mute', muted ? '1' : '0'); } catch (e) {} paint(); if (!muted) play('tick'); });
+  m.addEventListener('click', () => { muted = !muted; try { localStorage.setItem('mute', muted ? '1' : '0'); } catch (e) {} paint(); bgmSync(); if (!muted) play('tick'); });
   document.body.appendChild(m);
 })();
 
