@@ -217,7 +217,7 @@ async function loadOrders() {
     <small>${esc(fmtD(o.created_at))}</small>
     <div class="ocu"><b>${esc(o.customer_name)}</b><div>📞 ${esc(o.phone)}</div><div>📍 ${esc(o.address)}${o.city ? ' — ' + esc(o.city) : ''}</div></div>
     <div class="oits">${items}</div>
-    <div class="otot"><span>${qty} قطعة — ${esc(o.payment === 'cash' ? 'كاش عند الاستلام' : o.payment)}</span><b>الإجمالي ${+o.total} ج.م</b></div>${+o.delivery_fee?`<div class="otot"><span>المنتجات ${+o.subtotal} + خدمة توصيل ${+o.delivery_fee} ج.م</span><b>🌹</b></div>`:''}
+    <div class="otot"><span>${qty} قطعة — ${esc(o.payment === 'cash' ? 'كاش عند الاستلام' : o.payment === 'vodafone' ? 'فودافون كاش' : o.payment)}</span><b>الإجمالي ${+o.total} ج.م</b></div>${+o.delivery_fee?`<div class="otot"><span>المنتجات ${+o.subtotal} + خدمة توصيل ${+o.delivery_fee} ج.م</span><b>🌹</b></div>`:''}
     <div class="oact"><a class="ob call" href="tel:${esc(o.phone)}">اتصال</a></div>
     <label class="lbl">حالة الطلب</label>
     <select class="ost">${Object.keys(ST).map(k => `<option value="${k}" ${k === o.status ? 'selected' : ''}>${ST[k]}</option>`).join('')}</select><div class="msg"></div></div>`;
@@ -237,3 +237,9 @@ loadFeeAdmin();
 $('#savefee').onclick = async () => { const m = $('#feemsg'); const v = parseFloat($('#feeval').value); if (isNaN(v) || v < 0) { m.className = 'msg err'; m.textContent = 'اكتب رقم صح'; return; }
   const r = await rpc('admin_set_fee', { p_pin: PIN, p_fee: v }).catch(() => null);
   if (r && r.ok) { m.className = 'msg ok'; m.textContent = 'اتحفظت: ' + v + ' ج.م'; } else { m.className = 'msg err'; m.textContent = 'مشكلة في الحفظ'; } };
+
+async function loadVfAdmin() { try { const r = await fetch(SUPA_URL + '/rest/v1/app_settings?select=value&key=eq.vodafone_number', { headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON } }); const d = await r.json(); $('#vfval').value = d[0] ? d[0].value : ''; } catch (e) {} }
+loadVfAdmin();
+$('#savevf').onclick = async () => { const m = $('#vfmsg'); const v = $('#vfval').value.trim();
+  const r = await rpc('admin_set_vf', { p_pin: PIN, p_num: v }).catch(() => null);
+  if (r && r.ok) { m.className = 'msg ok'; m.textContent = v ? 'اتحفظ: ' + v : 'اتمسح — الرقم مش هيظهر للعميل'; } else { m.className = 'msg err'; m.textContent = 'مشكلة في الحفظ'; } };

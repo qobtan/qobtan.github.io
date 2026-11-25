@@ -14,8 +14,11 @@ let tab = 'shop', q = '', det = null;
 const money = n => n + ' ج.م';
 let FEE = store.get('fee', 25);
 const grand = () => total() + FEE;
+let PAY = store.get('pay', 'cash'); if (PAY !== 'vodafone') PAY = 'cash';
+let VF = store.get('vf', '01028540358');
+const payLabel = p => p === 'vodafone' ? 'فودافون كاش' : 'كاش عند الاستلام';
 const THX = 'سعداء بخدمة حضرتك 🌹';
-async function loadFee() { try { const r = await fetch(SUPA_URL + '/rest/v1/app_settings?select=value&key=eq.delivery_fee', { headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON } }); const d = await r.json(); const v = parseFloat(d[0] && d[0].value); if (!isNaN(v)) { FEE = v; store.set('fee', v); render(true); } } catch (e) {} }
+async function loadFee() { try { const r = await fetch(SUPA_URL + '/rest/v1/app_settings?select=key,value&key=in.(delivery_fee,vodafone_number)', { headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON } }); const d = await r.json(); if (!Array.isArray(d)) return; d.forEach(x => { if (x.key === 'delivery_fee') { const v = parseFloat(x.value); if (!isNaN(v)) { FEE = v; store.set('fee', v); } } if (x.key === 'vodafone_number') { VF = (x.value || '').trim(); store.set('vf', VF); } }); render(true); } catch (e) {} }
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const lines = () => PRODUCTS.filter(p => p.price > 0 && cart[p.id] > 0);
 const count = () => lines().reduce((s, p) => s + cart[p.id], 0);
@@ -47,7 +50,7 @@ function shopGrid() {
 function waLink() {
   const L = lines();
   const msg = ['طلب جديد من تطبيق منظفات القبطان', ...L.map(p => `${cart[p.id]} × ${p.name} = ${money(p.price * cart[p.id])}`),
-    `إجمالي المنتجات: ${money(total())}`, `خدمة توصيل: ${money(FEE)}`, `الإجمالي: ${money(grand())}`, 'الدفع: كاش عند الاستلام', `الاسم: ${info.name.trim()}`, `التليفون: ${info.phone.trim()}`, `العنوان (الفيوم): ${info.address.trim()}`, THX].join('\n');
+    `إجمالي المنتجات: ${money(total())}`, `خدمة توصيل: ${money(FEE)}`, `الإجمالي: ${money(grand())}`, `الدفع: ${payLabel(PAY)}`, `الاسم: ${info.name.trim()}`, `التليفون: ${info.phone.trim()}`, `العنوان (الفيوم): ${info.address.trim()}`, THX].join('\n');
   return `https://wa.me/${WA}?text=${encodeURIComponent(msg)}`;
 }
 function ready() { return lines().length > 0 && info.name.trim() && info.phone.trim() && info.address.trim(); }
@@ -61,7 +64,8 @@ function cartView() {
   <label class="f"><span>الاسم</span><input type="text" id="f-name" value="${esc(info.name)}" autocomplete="name"></label>
   <label class="f"><span>رقم التليفون</span><input type="tel" id="f-phone" value="${esc(info.phone)}" autocomplete="tel"></label>
   <label class="f"><span>العنوان بالتفصيل</span><input type="text" id="f-address" value="${esc(info.address)}" autocomplete="street-address"></label>
-  <div class="f"><span>طريقة الدفع</span><div class="pay"><b>كاش عند الاستلام</b><s>أونلاين (قريبًا)</s></div></div>
+  <div class="f"><span>طريقة الدفع</span><div class="pay"><button type="button" class="pb${PAY === 'cash' ? ' on' : ''}" data-pay="cash">كاش عند الاستلام</button><button type="button" class="pb${PAY === 'vodafone' ? ' on' : ''}" data-pay="vodafone">فودافون كاش</button></div></div>
+  ${PAY === 'vodafone' ? `<div class="vfnote">هنكلمك على رقمك عشان نكمل التحويل بفودافون كاش.${VF ? `<br>رقم فودافون كاش: <b dir="ltr">${esc(VF)}</b> <button type="button" class="vfcopy" data-copy="${esc(VF)}">نسخ</button>` : ''}</div>` : ''}
   <div id="sendbox"></div><div class="note">الطلب بيوصل لمنظفات القبطان على طول، ومش بيتأكد غير لما يكلموك.</div>`);
   if (L.length) {
     const upd = () => { $('#sendbox').innerHTML = ready() ? `<button class="wa" id="place" type="button" style="width:100%;border:0;cursor:pointer;font-family:inherit">ابعت الطلب</button><div class="msg-p" id="pmsg" style="text-align:center;margin-top:8px;font-size:13px"></div>` : '<div class="hint">اكتب الاسم والتليفون والعنوان عشان زرار الإرسال يظهر.</div>'; };
@@ -93,12 +97,12 @@ async function placeOrder(btn) {
   const msg = $('#pmsg'); btn.disabled = true; btn.textContent = 'بيتبعت...';
   try {
     const r = await fetch(SUPA_URL + '/rest/v1/rpc/place_order', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ p_name: info.name.trim(), p_phone: info.phone.trim(), p_address: info.address.trim(), p_city: 'الفيوم', p_payment: 'cash', p_items: items, p_total: grand() }) });
+      body: JSON.stringify({ p_name: info.name.trim(), p_phone: info.phone.trim(), p_address: info.address.trim(), p_city: 'الفيوم', p_payment: PAY, p_items: items, p_total: grand() }) });
     const id = await r.json();
     if (!r.ok || typeof id !== 'number') throw new Error('x');
-    const wl = waLink(); const gt = grand(); try { if (localStorage.getItem('mute') !== '1') { const oa = new Audio('order.mp3'); oa.play().catch(() => {}); } } catch (e) {}
+    const wl = waLink(); const gt = grand(); const payP = PAY; try { if (localStorage.getItem('mute') !== '1') { const oa = new Audio('order.mp3'); oa.play().catch(() => {}); } } catch (e) {}
     cart = {}; store.set('cart', cart); badge();
-    view.innerHTML = `<div class="empty"><b style="font-size:20px">✅ الطلب اتبعت</b><br>رقم طلبك #${id}<br>الإجمالي ${money(gt)} (شامل التوصيل)<br>${THX}<br>هنكلمك على رقمك لتأكيد الطلب والتوصيل.<br><button class="go" data-tab="shop">رجوع للمنتجات</button></div>`;
+    view.innerHTML = `<div class="empty"><b style="font-size:20px">✅ الطلب اتبعت</b><br>رقم طلبك #${id}<br>الإجمالي ${money(gt)} (شامل التوصيل)<br>${THX}<br>${payP === 'vodafone' ? 'هنكلمك على رقمك عشان نكمل التحويل بفودافون كاش.' : 'هنكلمك على رقمك لتأكيد الطلب والتوصيل.'}<br><button class="go" data-tab="shop">رجوع للمنتجات</button></div>`;
   } catch (err) {
     btn.disabled = false; btn.textContent = 'ابعت الطلب';
     msg.style.color = '#b3261e'; msg.innerHTML = 'مفيش اتصال أو حصلت مشكلة. جرّب تاني، أو ابعت الطلب على واتساب: <a href="' + waLink() + '" target="_blank" rel="noopener" style="color:#1a9a52;font-weight:700">واتساب</a>';
@@ -113,6 +117,8 @@ document.addEventListener('click', e => {
   if (!t) { const c = e.target.closest('[data-open]'); if (c) openP(+c.dataset.open); return; }
   if (t.dataset.back) { history.back(); }
   else if (t.dataset.share) { const p = PRODUCTS.find(x => x.id === +t.dataset.share); const txt = p.name + (p.price > 0 ? ' - ' + money(p.price) : '') + '\nمنظفات القبطان (توصيل داخل الفيوم)'; if (navigator.share) navigator.share({ title: p.name, text: txt, url: location.origin + location.pathname }).catch(() => {}); else window.open('https://wa.me/?text=' + encodeURIComponent(txt + '\n' + location.origin + location.pathname)); }
+  else if (t.dataset.pay) { PAY = t.dataset.pay; store.set('pay', PAY); render(true); }
+  else if (t.dataset.copy) { try { navigator.clipboard.writeText(t.dataset.copy); t.textContent = 'اتنسخ ✓'; } catch (e) { t.textContent = t.dataset.copy; } }
   else if (t.dataset.tab) { det = null; tab = t.dataset.tab; render(); scrollTo(0, 0); }
   else if (t.dataset.add) change(+t.dataset.add, 1);
   else if (t.dataset.inc) change(+t.dataset.inc, 1);
@@ -188,7 +194,7 @@ loadFee();
     if (el.closest('#salatSplash')) return null;
     if (el.closest('#place')) return 'tick';
     if (el.closest('[data-add]')) return 'add';
-    const b = el.closest('button, .pay b, .pay s, a, [data-tab], [data-d], [data-det], .card');
+    const b = el.closest('button, .pay button, .vfcopy, a, [data-tab], [data-d], [data-det], .card');
     if (!b) return null;
     if (b.dataset && b.dataset.tab) return 'tab';
     if (b.textContent.trim() === '−' || b.textContent.trim() === '-') return 'minus';
