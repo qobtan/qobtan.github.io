@@ -7,12 +7,10 @@
 .wrap{max-width:560px;margin:0 auto;padding:12px}
 .inv{background:#fffdf8;border-radius:6px;overflow:hidden;box-shadow:0 10px 34px rgba(7,28,53,.25);position:relative;isolation:isolate}
 .inv:before{content:"";position:absolute;inset:0;background:url(logo.jpg) center 58%/78% no-repeat;opacity:.03;z-index:-1;filter:grayscale(1)}
-.hd{background:#071c35;background-image:radial-gradient(circle at 15% 0,rgba(245,201,69,.18),transparent 45%),radial-gradient(circle at 90% 100%,rgba(245,201,69,.12),transparent 40%),repeating-linear-gradient(45deg,rgba(245,201,69,.05) 0 2px,transparent 2px 14px);color:#f5c945;text-align:center;padding:30px 14px 26px;position:relative}
-.hd:after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(90deg,#9c7314,#f5c945,#fff3b0,#f5c945,#9c7314)}
-.hd img{width:104px;height:104px;border-radius:50%;border:3px solid #f5c945;object-fit:cover;box-shadow:0 0 0 6px rgba(245,201,69,.16),0 0 0 7px rgba(245,201,69,.5),0 10px 22px rgba(0,0,0,.45);background:#fff}
-.hd h1{margin:16px 0 0;font-family:"Aref Ruqaa",Cairo,serif;font-size:36px;line-height:1.2;font-weight:700;color:#f5c945;text-shadow:0 2px 8px rgba(0,0,0,.4)}
-.hd p{margin:6px 0 0;font-size:13px;color:#c9d6e6;letter-spacing:3px;font-weight:600}
-.orn{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;color:#f5c945;font-size:10px}.orn:before,.orn:after{content:"";width:60px;height:1px;background:linear-gradient(90deg,transparent,#f5c945)}.orn:after{transform:scaleX(-1)}
+.hd{background:radial-gradient(120% 90% at 50% 0%,#1d5aa0 0%,#0f3a6b 45%,#071c36 100%);color:#fff;text-align:center;padding:24px 16px 26px;border-bottom:4px solid #d9a93a;border-radius:0 0 28px 28px;position:relative}
+.hd .logo{width:104px;height:104px;margin:0 auto 10px;border-radius:50%;background:#fff;padding:5px;box-shadow:0 0 0 3px #d9a93a,0 8px 22px rgba(0,0,0,.4);overflow:hidden}.hd .logo img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.hd h1{font-size:30px;line-height:1.2;margin:0;color:#f6d77b;font-weight:800}.hd .slogan{margin:6px 0 12px;font-size:14px;color:#dbe7f5}
+.dlv{display:flex;align-items:center;justify-content:center;gap:8px;margin:8px auto 0;max-width:300px}.dlv .dl{flex:1;height:1px;background:linear-gradient(90deg,transparent,#f6d77b99)}.dlv .dl:last-child{transform:scaleX(-1)}.dlv .sep{width:1px;height:14px;background:#f6d77b66}.dlv .dt{font-family:Georgia,serif;font-size:13px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:#f6e7b4;white-space:nowrap;direction:ltr}
 .ttl{display:flex;align-items:center;justify-content:space-between;margin:20px 20px 0}
 .ttl h2{margin:0;font-size:24px;font-weight:900;color:#0b2a4a;position:relative;padding-right:14px}.ttl h2:before{content:"";position:absolute;right:0;top:6px;bottom:6px;width:5px;border-radius:3px;background:linear-gradient(#f5c945,#b8891f)}
 .num{direction:ltr;font-size:14px!important;background:#071c35;color:#f5c945;border-radius:30px;padding:5px 18px;font-weight:800;font-size:17px;border:1.5px solid #d4a82c;letter-spacing:.5px}
@@ -58,7 +56,7 @@ const q=new URLSearchParams(location.search);const DEMO=q.get('demo')==='1';
     const fee=+o.delivery_fee||Math.max(0,(+o.total||0)-sub);
     const d=new Date(o.created_at).toLocaleDateString('ar-EG',{day:'numeric',month:'long',year:'numeric',timeZone:'Africa/Cairo'});
     const pay=o.payment==='vodafone'?'فودافون كاش':'كاش عند الاستلام';
-    app.innerHTML=`<div class="inv"><div class="hd"><img src="logo.jpg" alt=""><h1>منظفات القبطان</h1><p>نظافة .. ثقة .. جودة</p><div class="orn">◆ ◆ ◆</div></div>
+    app.innerHTML=`<div class="inv"><div class="hd"><div class="logo"><img src="logo.jpg" alt=""></div><h1>منظفات القبطان</h1><p class="slogan">نظافة .. ثقة .. جودة</p><div class="dlv"><span class="dl"></span><svg viewBox="0 0 32 24" width="26" height="20" fill="none" stroke="#f6d77b" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="18" r="3.2"/><circle cx="25" cy="18" r="3.2"/><path d="M10 18h11l-3-9h-4"/><path d="M21 18l3-11h3"/><rect x="2" y="6" width="9" height="6" rx="1"/></svg><span class="sep"></span><svg viewBox="0 0 20 24" width="14" height="17" fill="none" stroke="#f6d77b" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 22s7-6.3 7-12A7 7 0 0 0 3 10c0 5.7 7 12 7 12z"/><circle cx="10" cy="10" r="2.5"/></svg><span class="dt">Fayoum</span><span class="dl"></span></div></div>
     <div class="ttl"><h2>فاتورة بيع</h2><div class="num">${NO}</div></div><div class="bd">
     <div class="cards"><div class="card"><small>فاتورة إلى</small><b>${esc(o.customer_name)}</b><span class="v">📞 ${esc(o.phone)}</span><br>📍 ${esc(o.address)}${o.city?' - '+esc(o.city):''}</div>
     <div class="card"><small>تاريخ الفاتورة</small><b style="font-size:15px;line-height:1.7">${esc(d)}</b></div></div>
