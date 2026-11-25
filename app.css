@@ -148,3 +148,10 @@ main>.back,.back{color:#f6d77b}
 .shr{background:#f6f8fb;color:#0b2a4a}
 .msg-p{color:#f6d77b}
 .ck i{background:#2bc16a}
+
+/* ===== spacing v50 ===== */
+.search{margin-bottom:22px}
+.search input{margin-bottom:0}
+#view>.grid,main .grid{margin-top:8px}
+main{padding-top:18px}
+.grid{gap:16px}
