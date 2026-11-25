@@ -10,7 +10,7 @@ const store = {
 };
 let cart = store.get('cart', {});
 let info = store.get('info', { name: '', phone: '', address: '' });
-let tab = 'shop', q = '', det = null;
+let tab = /tab=orders/.test(location.search) ? 'orders' : 'shop', q = '', det = null;
 const money = n => n + ' ج.م';
 let FEE = store.get('fee', 25);
 const grand = () => total() + FEE;
@@ -124,9 +124,28 @@ async function loadMyOrders() {
   badge(); if (tab === 'orders' && !det) { const y = scrollY; render(true); scrollTo(0, y); }
 }
 const fmtDate = s => { try { return new Date(s).toLocaleString('ar-EG', { weekday: 'short', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } };
+
+const VAPID = 'BF7ApvD2DmsAO2DFWle6vjJAb0OwRMxrap55nxCvBgSzRwkWaQciiNu2mdDWG6NBJeFn0GIUN3oaA9UFNKx_RGU';
+const u8 = s => { const p = '='.repeat((4 - s.length % 4) % 4); const b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...b].map(c => c.charCodeAt(0))); };
+const canPush = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+async function pushSave(ref) {
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: u8(VAPID) });
+  const r = await fetch(SUPA_URL + '/rest/v1/rpc/save_push', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_id: ref.id, p_token: ref.token, p_sub: sub.toJSON() }) });
+  return r.ok && (await r.json()) === true;
+}
+async function enablePush(btn) {
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { btn.textContent = 'مقدرناش نفعّل الإشعارات'; return; }
+    for (const o of MYO) { try { await pushSave(o); } catch (e) {} }
+    store.set('pushon', 1); JUST && (JUST.askPush = false); btn.parentNode.innerHTML = '🔔 تمام، هنبعتلك إشعار مع كل خطوة في طلبك';
+  } catch (e) { btn.textContent = 'حصلت مشكلة، جرّب تاني'; }
+}
 let JUST = null;
 function ordersView() {
-  let h = (JUST ? '<div class="empty" style="padding:14px 0 4px"><b style="font-size:20px">✅ الطلب اتبعت</b><br>رقم طلبك #' + JUST.id + '<br>الإجمالي ' + money(JUST.gt) + ' (شامل التوصيل)<br>' + THX + '<br>' + (JUST.pay === 'vodafone' ? (VF ? '<div class="vfnote" style="margin:10px 0">' + vfLine() + '</div>' : '') : 'هنكلمك على رقمك لتأكيد الطلب والتوصيل.') + '</div>' : '') + '<div class="sec"><span>طلباتي</span><em>' + (MYDATA ? MYDATA.length + ' طلب' : '') + '</em></div>';
+  let h = (JUST ? '<div class="empty" style="padding:14px 0 4px"><b style="font-size:20px">✅ الطلب اتبعت</b><br>رقم طلبك #' + JUST.id + '<br>الإجمالي ' + money(JUST.gt) + ' (شامل التوصيل)<br>' + THX + '<br>' + (JUST.pay === 'vodafone' ? (VF ? '<div class="vfnote" style="margin:10px 0">' + vfLine() + '</div>' : '') : 'هنكلمك على رقمك لتأكيد الطلب والتوصيل.') + (JUST.askPush ? '<div class="pushc"><b>🔔 عايز تعرف حالة طلبك أول بأول؟</b><span>فعّل الإشعارات وهنبعتلك رسالة لما الطلب يتأكد، يخرج للتوصيل، ويوصل.</span><button type="button" class="go" data-push="1">فعّل الإشعارات</button></div>' : '') + '</div>' : '') + '<div class="sec"><span>طلباتي</span><em>' + (MYDATA ? MYDATA.length + ' طلب' : '') + '</em></div>';
   if (MYDATA === null) h += '<div class="empty">بنحمّل طلباتك...</div>';
   else if (!MYDATA.length) h += '<div class="empty">' + (MYERR ? 'مفيش اتصال دلوقتي. جرّب تاني بعد شوية.' : 'مفيش طلبات شغالة دلوقتي.') + '<br><button class="go" data-tab="shop">ابدأ اطلب</button></div>';
   else {
@@ -157,7 +176,7 @@ async function placeOrder(btn) {
     MYO = MYO.filter(o => o.id !== id); MYO.unshift({ id: id, token: res.token }); store.set('myorders', MYO); MYDATA = null;
     const wl = waLink(); const gt = grand(); const payP = PAY; try { if (localStorage.getItem('mute') !== '1') { const oa = new Audio('order.mp3'); oa.play().catch(() => {}); } } catch (e) {}
     cart = {}; store.set('cart', cart); badge();
-    JUST = { id: id, gt: gt, pay: payP }; tab = 'orders'; det = null; render(); scrollTo(0, 0); loadMyOrders();
+    JUST = { id: id, gt: gt, pay: payP, askPush: false }; if (canPush()) { if (Notification.permission === 'granted') pushSave({ id: id, token: res.token }).catch(() => {}); else if (Notification.permission === 'default') JUST.askPush = true; } tab = 'orders'; det = null; render(); scrollTo(0, 0); loadMyOrders();
   } catch (err) {
     btn.disabled = false; btn.textContent = 'ابعت الطلب';
     msg.style.color = '#b3261e'; msg.innerHTML = 'مفيش اتصال أو حصلت مشكلة. جرّب تاني، أو ابعت الطلب على واتساب: <a href="' + waLink() + '" target="_blank" rel="noopener" style="color:#1a9a52;font-weight:700">واتساب</a>';
@@ -174,6 +193,7 @@ document.addEventListener('click', e => {
   else if (t.dataset.share) { const p = PRODUCTS.find(x => x.id === +t.dataset.share); const txt = p.name + (p.price > 0 ? ' - ' + money(p.price) : '') + '\nمنظفات القبطان (توصيل داخل الفيوم)'; if (navigator.share) navigator.share({ title: p.name, text: txt, url: location.origin + location.pathname }).catch(() => {}); else window.open('https://wa.me/?text=' + encodeURIComponent(txt + '\n' + location.origin + location.pathname)); }
   else if (t.dataset.star) { const id = +t.dataset.oid, n = +t.dataset.star; RATE[id] = n; document.querySelectorAll('.star[data-oid="' + id + '"]').forEach(b => b.classList.toggle('on', +b.dataset.star <= n)); }
   else if (t.dataset.skiprate) { const id = +t.dataset.skiprate; MYO = MYO.filter(o => o.id !== id); store.set('myorders', MYO); MYDATA = (MYDATA || []).filter(o => o.id !== id); render(true); }
+  else if (t.dataset.push) { enablePush(t); }
   else if (t.dataset.sendrate) { sendRate(+t.dataset.sendrate, t); }
   else if (t.dataset.pay) { PAY = t.dataset.pay; store.set('pay', PAY); render(true); }
   else if (t.dataset.copy) { try { navigator.clipboard.writeText(t.dataset.copy); t.textContent = 'اتنسخ ✓'; } catch (e) { t.textContent = t.dataset.copy; } }
@@ -185,7 +205,7 @@ document.addEventListener('click', e => {
 
 const cachedLive = store.get('liveProducts', null);
 if (Array.isArray(cachedLive) && cachedLive.length) PRODUCTS = cachedLive;
-render();
+render(); if (tab === 'orders') loadMyOrders();
 async function liveProducts() {
   try {
     const r = await fetch(SUPA_URL + '/rest/v1/products?select=*&order=sort.asc', { headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON } });
