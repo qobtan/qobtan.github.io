@@ -83,6 +83,8 @@ function closeP() { det = null; render(); }
 addEventListener('popstate', () => { if (det !== null) closeP(); });
 function render(keepScroll) { badge(); document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab)); const y = scrollY; if (det !== null && tab === 'shop') detailView(PRODUCTS.find(p => p.id === det)); else tab === 'shop' ? shop() : cartView(); if (keepScroll) scrollTo(0, y); }
 document.addEventListener('click', e => {
+  const wa = e.target.closest('a.wa');
+  if (wa && /Android/i.test(navigator.userAgent)) { e.preventDefault(); location.href = wa.href; return; }
   const t = e.target.closest('button');
   if (!t) { const c = e.target.closest('[data-open]'); if (c) openP(+c.dataset.open); return; }
   if (t.dataset.back) { history.back(); }
