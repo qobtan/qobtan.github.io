@@ -23,6 +23,16 @@ async function checkPin(p) {
 }
 
 
+
+function showSec(s) {
+  if (!['orders', 'products', 'settings'].includes(s)) s = 'orders';
+  document.querySelectorAll('.sec').forEach(e => e.classList.toggle('on', e.id === 'sec-' + s));
+  document.querySelectorAll('#bnav button').forEach(b => b.classList.toggle('on', b.dataset.sec === s));
+  try { localStorage.setItem('admsec', s); } catch (e) {}
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('#bnav button').forEach(b => b.addEventListener('click', () => { showSec(b.dataset.sec); if (b.dataset.sec === 'orders') loadOrders(); }));
+function enterPanel() { $('#bnav').hidden = false; showSec((new URLSearchParams(location.search).get('tab')) || 'orders'); }
 async function adminFcm() {
   try {
     if (!window.AndroidFCM || !PIN) return;
@@ -37,7 +47,7 @@ async function enter() {
   const ok = await checkPin(p).catch(() => false);
   if (!ok) { $('#pinmsg').className = 'msg err'; $('#pinmsg').textContent = 'الرقم غلط أو مفيش اتصال'; return; }
   PIN = p; localStorage.setItem('adminpin', p); nat.set(p);
-  $('#pinbox').hidden = true; $('#panel').hidden = false;
+  $('#pinbox').hidden = true; $('#panel').hidden = false; enterPanel();
   load(); loadOrders(); adminFcm(); setTimeout(adminFcm, 4000);
 }
 
@@ -193,9 +203,9 @@ document.addEventListener('change', e => {
   let st = 'net';
   if (PIN) { try { const rr = await checkPin(PIN); st = rr ? 'ok' : 'bad'; } catch (e) { st = 'net'; } }
   if (PIN && st === 'net') st = 'ok';
-  if (!(PIN && st === 'ok')) { try { $('#pinmsg').textContent = 'v38 | app:' + (window.AndroidFCM && AndroidFCM.getPin ? 'v3' : 'old/none') + ' | saved:' + (PIN ? 'yes' : 'no') + ' | check:' + st; } catch (e) {} }
+  if (!(PIN && st === 'ok')) { try { $('#pinmsg').textContent = 'v39 | app:' + (window.AndroidFCM && AndroidFCM.getPin ? 'v3' : 'old/none') + ' | saved:' + (PIN ? 'yes' : 'no') + ' | check:' + st; } catch (e) {} }
   if (PIN && st === 'ok') {
-    $('#pinbox').hidden = true; $('#panel').hidden = false; load(); loadOrders(); adminFcm(); setTimeout(adminFcm, 4000);
+    $('#pinbox').hidden = true; $('#panel').hidden = false; enterPanel(); load(); loadOrders(); adminFcm(); setTimeout(adminFcm, 4000);
   }
 })();
 
@@ -222,6 +232,7 @@ async function loadOrders() {
   if (!rows.length) { try { const pr = await api('/rest/v1/products?select=id,img'); (await pr.json()).forEach(p => { PIMG[p.id] = p.img; }); } catch (e) {} }
   const fmtD = s => { const d = new Date(s); return d.toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' }) + ' — ' + d.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit' }); };
   const counts = { new: 0 }; r.data.forEach(o => { if (o.status === 'new') counts.new++; });
+  { const nb = $('#nbnew'); if (nb) { nb.textContent = counts.new || ''; nb.hidden = !counts.new; } }
   box.innerHTML = `<div class="hint2" style="margin-top:8px">${r.data.length} طلب — ${counts.new} جديد</div>` + r.data.map(o => {
     const items = (o.items || []).map(i => `<div class="oit"><img src="${esc(imgOf(i))}" alt=""><div class="oib"><b>${esc(i.name)}</b><span>${+i.qty} × ${+i.price} ج.م</span></div><div class="oil">${(+i.qty) * (+i.price)} ج.م</div></div>`).join('');
     const qty = (o.items || []).reduce((s, i) => s + (+i.qty || 0), 0);
