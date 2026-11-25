@@ -21,6 +21,14 @@ async function checkPin(p) {
   return (await r.json()) === true;
 }
 
+
+async function adminFcm() {
+  try {
+    if (!window.AndroidFCM || !PIN) return;
+    const t = AndroidFCM.token(); if (!t) return;
+    await fetch(SUPA_URL + '/rest/v1/rpc/admin_save_fcm', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_pin: PIN, p_fcm: t }) });
+  } catch (e) {}
+}
 async function enter() {
   const p = $('#pin').value.trim();
   $('#pinmsg').className = 'msg'; $('#pinmsg').textContent = '...';
@@ -29,7 +37,7 @@ async function enter() {
   if (!ok) { $('#pinmsg').className = 'msg err'; $('#pinmsg').textContent = 'الرقم غلط أو مفيش اتصال'; return; }
   PIN = p; sessionStorage.setItem('adminpin', p);
   $('#pinbox').hidden = true; $('#panel').hidden = false;
-  load(); loadOrders();
+  load(); loadOrders(); adminFcm(); setTimeout(adminFcm, 4000);
 }
 
 async function load() {
@@ -182,7 +190,7 @@ document.addEventListener('change', e => {
 });
 (async () => {
   if (PIN && await checkPin(PIN).catch(() => false)) {
-    $('#pinbox').hidden = true; $('#panel').hidden = false; load(); loadOrders();
+    $('#pinbox').hidden = true; $('#panel').hidden = false; load(); loadOrders(); adminFcm(); setTimeout(adminFcm, 4000);
   }
 })();
 
