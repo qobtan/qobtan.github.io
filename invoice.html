@@ -24,6 +24,7 @@
 table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px;border:1px solid #eadfbf;border-radius:10px;overflow:hidden}
 th{background:#071c35;color:#f5c945;padding:11px 8px;text-align:right;font-size:12.5px;font-weight:800}
 td{padding:12px 8px;border-bottom:1px solid #f0e8d0;font-weight:700;background:rgba(255,255,255,.55)}tbody tr:nth-child(even) td{background:rgba(250,244,226,.7)}tbody tr:last-child td{border-bottom:0}
+td .pn{display:flex;align-items:center;gap:9px}.pn img{width:44px;height:44px;border-radius:8px;object-fit:cover;border:1px solid #e3cf8f;background:#fff;flex:none}.pn span{line-height:1.4}
 td.n,th.n{text-align:center;white-space:nowrap}td.i,th.i{text-align:center;width:30px;color:#a8801f;font-weight:800}
 .low{display:grid;grid-template-columns:92px 1fr;gap:12px;margin-top:16px;align-items:stretch}
 .qr{border:1px solid #eadfbf;border-radius:10px;background:#fff;text-align:center;padding:8px 6px 6px;font-size:10.5px;color:#6b7a8c;font-weight:700;line-height:1.3}.qr img{width:84px;height:84px;display:block;margin:0 auto 4px}
@@ -49,6 +50,8 @@ const q=new URLSearchParams(location.search);const DEMO=q.get('demo')==='1';
     const r=DEMO?null:await fetch(U+'/rest/v1/rpc/get_invoice',{method:'POST',headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json'},body:JSON.stringify({p_id:+q.get('id'),p_token:q.get('t')})});
     const o=DEMO?{id:1042,customer_name:'أحمد محمد',phone:'01012345678',address:'شارع الجمهورية، بجوار مسجد النور',city:'الفيوم',payment:'cod',delivery_fee:25,total:185,created_at:new Date().toISOString(),items:[{name:'سائل جلي ليمون 1 لتر',qty:2,price:45},{name:'مطهر أرضيات 2 لتر',qty:1,price:70}]}:(r.ok?await r.json():null);
     if(!o){app.innerHTML='<div class="msg">الفاتورة مش موجودة أو اللينك غلط.</div>';return;}
+    let PM=[];try{if(!DEMO){const pr=await fetch(U+'/rest/v1/products?select=id,name,img',{headers:{apikey:K,Authorization:'Bearer '+K}});if(pr.ok)PM=await pr.json();}else PM=[{id:1,name:'سائل جلي ليمون 1 لتر',img:'p1.jpg'},{id:2,name:'مطهر أرضيات 2 لتر',img:'p2.jpg'}];}catch(e){}
+    const imgOf=i=>{const p=PM.find(x=>x.id===+i.id)||PM.find(x=>x.name===i.name);return p&&p.img?p.img:'logo.jpg';};
     const its=o.items||[];const sub=its.reduce((s,i)=>s+(+i.qty||0)*(+i.price||0),0);
     const fee=+o.delivery_fee||Math.max(0,(+o.total||0)-sub);
     const d=new Date(o.created_at).toLocaleDateString('ar-EG',{day:'numeric',month:'long',year:'numeric',timeZone:'Africa/Cairo'});
@@ -57,13 +60,20 @@ const q=new URLSearchParams(location.search);const DEMO=q.get('demo')==='1';
     <div class="ttl"><h2>فاتورة بيع</h2><div class="num">#${o.id}</div></div><div class="bd">
     <div class="cards"><div class="card"><small>فاتورة إلى</small><b>${esc(o.customer_name)}</b><span class="v">📞 ${esc(o.phone)}</span><br>📍 ${esc(o.address)}${o.city?' - '+esc(o.city):''}</div>
     <div class="card"><small>تاريخ الفاتورة</small><b style="font-size:14px">${esc(d)}</b><small style="margin-top:6px">رقم الفاتورة</small><b>#${o.id}</b></div></div>
-    <table><thead><tr><th class="i">#</th><th>الصنف</th><th class="n">الكمية</th><th class="n">السعر</th><th class="n">الإجمالي</th></tr></thead><tbody>${its.map((i,k)=>`<tr><td class="i">${k+1}</td><td>${esc(i.name)}</td><td class="n">${+i.qty}</td><td class="n">${+i.price}</td><td class="n">${(+i.qty)*(+i.price)}</td></tr>`).join('')}</tbody></table>
+    <table><thead><tr><th class="i">#</th><th>الصنف</th><th class="n">الكمية</th><th class="n">السعر</th><th class="n">الإجمالي</th></tr></thead><tbody>${its.map((i,k)=>`<tr><td class="i">${k+1}</td><td><div class="pn"><img src="${esc(imgOf(i))}" alt="" crossorigin="anonymous"><span>${esc(i.name)}</span></div></td><td class="n">${+i.qty}</td><td class="n">${+i.price}</td><td class="n">${(+i.qty)*(+i.price)}</td></tr>`).join('')}</tbody></table>
     <div class="low"><div class="qr"><img src="qr.svg" alt="">واتساب<br>القبطان</div><div class="tot"><div><span>إجمالي المنتجات</span><b>${money(sub)}</b></div><div><span>خدمة التوصيل</span><b>${money(fee)}</b></div><div class="g"><span>الإجمالي المطلوب</span><span>${money(+o.total)}</span></div></div></div>
     <div class="pay"><span>طريقة الدفع</span><b>${pay}</b></div>
     </div><div class="ft">شكراً لثقتك بنا<b>منظفات القبطان 🌹</b><div class="c">WhatsApp: 01028540358</div><small>نظافة .. ثقة .. جودة</small></div></div>
     <div class="btns"><button type="button" id="bk" style="background:#071c35;color:#f5c945;flex:.6">← رجوع</button><button type="button" id="pr">🖨️ طباعة / PDF</button><button type="button" id="im">🖼️ حفظ كصورة</button></div>`;
     document.title='فاتورة #'+o.id+' - منظفات القبطان';
-    document.getElementById('im').onclick=async()=>{const b=document.getElementById('im');b.textContent='بيجهّز...';try{if(!window.html2canvas){await new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';s.onload=ok;s.onerror=no;document.head.appendChild(s);});}const cv=await html2canvas(document.querySelector('.inv'),{scale:3,backgroundColor:'#ffffff',useCORS:true});const a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download='invoice-'+o.id+'.png';document.body.appendChild(a);a.click();a.remove();b.textContent='🖼️ حفظ كصورة';}catch(e){b.textContent='مش اشتغلت، استخدم طباعة / PDF';}};
+    document.getElementById('im').onclick=async()=>{const b=document.getElementById('im');b.textContent='بيجهّز...';try{if(!window.html2canvas){await new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';s.onload=ok;s.onerror=no;document.head.appendChild(s);});}
+      const cv=await html2canvas(document.querySelector('.inv'),{scale:3,backgroundColor:'#ffffff',useCORS:true});const data=cv.toDataURL('image/png');const fn='invoice-'+o.id+'.png';
+      let done=false;
+      try{if(window.AndroidFCM&&AndroidFCM.saveImage){done=AndroidFCM.saveImage(data.split(',')[1],fn)===true||true;if(done){b.textContent='✅ اتحفظت في المعرض';setTimeout(()=>b.textContent='🖼️ حفظ كصورة',3000);return;}}}catch(e){}
+      try{const bl=await new Promise(r=>cv.toBlob(r,'image/png'));const f=new File([bl],fn,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'فاتورة #'+o.id});b.textContent='🖼️ حفظ كصورة';return;}}catch(e){if(e&&e.name==='AbortError'){b.textContent='🖼️ حفظ كصورة';return;}}
+      const ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;background:rgba(7,28,53,.96);z-index:99;overflow:auto;padding:14px;text-align:center;color:#f5c945;font-family:inherit';
+      ov.innerHTML='<p style="margin:6px 0 10px;font-weight:700">اضغط مطولاً على الصورة واختار "حفظ الصورة" أو خد سكرين شوت</p><img src="'+data+'" style="width:100%;max-width:560px;border-radius:8px"><br><a href="'+data+'" download="'+fn+'" style="display:inline-block;margin:12px 6px;background:#f5c945;color:#0b2a4a;padding:12px 20px;border-radius:12px;font-weight:800;text-decoration:none">⬇️ تحميل</a><button style="background:#fff;border:0;border-radius:12px;padding:12px 20px;font-weight:800;font-family:inherit" id="cl">إغلاق</button>';
+      document.body.appendChild(ov);ov.querySelector('#cl').onclick=()=>ov.remove();b.textContent='🖼️ حفظ كصورة';}catch(e){b.textContent='مش اشتغلت، استخدم طباعة / PDF';}};
     document.getElementById('bk').onclick=function(){history.length>1?history.back():(location.href='admin.html')};
     document.getElementById('pr').onclick=()=>{try{if(window.AndroidFCM&&AndroidFCM.print){AndroidFCM.print();return;}}catch(e){}window.print();};
   }catch(e){app.innerHTML='<div class="msg">مشكلة في الاتصال — جرّب تاني.</div>';}
