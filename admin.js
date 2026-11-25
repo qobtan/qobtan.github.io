@@ -193,7 +193,7 @@ document.addEventListener('change', e => {
   let st = 'net';
   if (PIN) { try { const rr = await checkPin(PIN); st = rr ? 'ok' : 'bad'; } catch (e) { st = 'net'; } }
   if (PIN && st === 'net') st = 'ok';
-  if (!(PIN && st === 'ok')) { try { $('#pinmsg').textContent = 'v37 | app:' + (window.AndroidFCM && AndroidFCM.getPin ? 'v3' : 'old/none') + ' | saved:' + (PIN ? 'yes' : 'no') + ' | check:' + st; } catch (e) {} }
+  if (!(PIN && st === 'ok')) { try { $('#pinmsg').textContent = 'v38 | app:' + (window.AndroidFCM && AndroidFCM.getPin ? 'v3' : 'old/none') + ' | saved:' + (PIN ? 'yes' : 'no') + ' | check:' + st; } catch (e) {} }
   if (PIN && st === 'ok') {
     $('#pinbox').hidden = true; $('#panel').hidden = false; load(); loadOrders(); adminFcm(); setTimeout(adminFcm, 4000);
   }
@@ -256,3 +256,6 @@ loadVfAdmin();
 $('#savevf').onclick = async () => { const m = $('#vfmsg'); const v = $('#vfval').value.trim();
   const r = await rpc('admin_set_vf', { p_pin: PIN, p_num: v }).catch(() => null);
   if (r && r.ok) { m.className = 'msg ok'; m.textContent = v ? 'اتحفظ: ' + v : 'اتمسح — الرقم مش هيظهر للعميل'; } else { m.className = 'msg err'; m.textContent = 'مشكلة في الحفظ'; } };
+
+setInterval(() => { try { if (!$('#panel').hidden && !(document.activeElement && /SELECT|INPUT|TEXTAREA/.test(document.activeElement.tagName)) && document.visibilityState === 'visible') loadOrders(); } catch (e) {} }, 30000);
+document.addEventListener('visibilitychange', () => { try { if (document.visibilityState === 'visible' && !$('#panel').hidden) loadOrders(); } catch (e) {} });
