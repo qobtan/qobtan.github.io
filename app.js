@@ -96,7 +96,7 @@ async function placeOrder(btn) {
       body: JSON.stringify({ p_name: info.name.trim(), p_phone: info.phone.trim(), p_address: info.address.trim(), p_city: 'الفيوم', p_payment: 'cash', p_items: items, p_total: grand() }) });
     const id = await r.json();
     if (!r.ok || typeof id !== 'number') throw new Error('x');
-    const wl = waLink(); const gt = grand();
+    const wl = waLink(); const gt = grand(); try { if (localStorage.getItem('mute') !== '1') { const oa = new Audio('order.mp3'); oa.play().catch(() => {}); } } catch (e) {}
     cart = {}; store.set('cart', cart); badge();
     view.innerHTML = `<div class="empty"><b style="font-size:20px">✅ الطلب اتبعت</b><br>رقم طلبك #${id}<br>الإجمالي ${money(gt)} (شامل التوصيل)<br>${THX}<br>هنكلمك على رقمك لتأكيد الطلب والتوصيل.<br><a class="wa" href="${wl}" target="_blank" rel="noopener">لو حابب تبعته كمان على واتساب (اختياري)</a><button class="go" data-tab="shop">رجوع للمنتجات</button></div>`;
   } catch (err) {
@@ -186,7 +186,7 @@ loadFee();
   window.uiSound = play;
   const kindOf = el => {
     if (el.closest('#salatSplash')) return null;
-    if (el.closest('#place')) return 'ok';
+    if (el.closest('#place')) return 'tick';
     if (el.closest('[data-add]')) return 'add';
     const b = el.closest('button, .pay b, .pay s, a, [data-tab], [data-d], [data-det], .card');
     if (!b) return null;
