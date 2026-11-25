@@ -31,7 +31,7 @@ function showSec(s) {
   try { localStorage.setItem('admsec', s); } catch (e) {}
   window.scrollTo(0, 0);
 }
-document.querySelectorAll('#bnav button').forEach(b => b.addEventListener('click', () => { showSec(b.dataset.sec); if (b.dataset.sec === 'orders') loadOrders(); if (b.dataset.sec === 'profit') loadProfit(); if (b.dataset.sec === 'materials') loadMats(); if (b.dataset.sec === 'products') loadStock(); }));
+document.querySelectorAll('#bnav button').forEach(b => b.addEventListener('click', () => { showSec(b.dataset.sec); if (b.dataset.sec === 'orders') loadOrders(); if (b.dataset.sec === 'profit') loadProfit(); if (b.dataset.sec === 'materials') setMS(($('#recbox') && !$('#recbox').hidden) ? 'rec' : 'mat'); if (b.dataset.sec === 'products') loadStock(); }));
 function enterPanel() { $('#bnav').hidden = false; const s0 = (new URLSearchParams(location.search).get('tab')) || 'orders'; showSec(s0); if (s0 === 'profit') loadProfit(); if (s0 === 'materials') loadMats(); loadStock(); }
 
 // ===== الأرباح =====
@@ -480,3 +480,52 @@ document.addEventListener('click', async e => {
   const b = t.closest('[data-mbuy]'); if (b) { const f = $('#matform'); f.open = true; $('#m-name').value = b.dataset.mbuy; f.scrollIntoView({ behavior: 'smooth' }); $('#m-qty').focus(); return; }
   const d = t.closest('[data-mdel]'); if (d) { if (!confirm('تمسح السطر ده؟')) return; const r = await rpc('admin_del_material', { p_pin: PIN, p_id: +d.dataset.mdel }).catch(() => null); if (r && r.ok) loadMats(); }
 });
+
+/* ===== التركيبات (ملحوظات) ===== */
+let NOTES = [];
+async function loadNotes() {
+  const r = await rpc('admin_get_notes', { p_pin: PIN }).catch(() => null);
+  if (!r || !r.ok || !Array.isArray(r.data)) { $('#recbox').innerHTML = '<div class="msg err">مشكلة في التحميل — جرّب تاني</div>'; return; }
+  NOTES = r.data; renderNotes();
+}
+function renderNotes() {
+  const q = (($('#nsearch') || {}).value || '').trim().toLowerCase();
+  const list = NOTES.filter(n => !q || (n.title + ' ' + n.body).toLowerCase().includes(q));
+  const keep = !!$('#nsearch');
+  const head = `<div class="ptools"><input type="search" id="nsearch" placeholder="🔍 دوّر في التركيبات" value="${esc(q)}"><button class="abtn sec" id="nnew" type="button">+ تركيبة</button></div>`;
+  const body = list.length ? list.map(n => `<button class="pli nli" type="button" data-note="${n.id}"><span class="pn">${esc(n.title)}<small>${esc(String(n.body).split('\n').filter(Boolean).slice(0, 2).join(' · ').slice(0, 90))}</small></span><i>‹</i></button>`).join('') : '<div class="pempty">لسه مفيش تركيبات. دوس "+ تركيبة" واكتب أول واحدة.</div>';
+  if (keep && document.activeElement && document.activeElement.id === 'nsearch') { $('#nlist').innerHTML = body; return; }
+  $('#recbox').innerHTML = head + '<div class="plist" id="nlist">' + body + '</div>';
+}
+function openNote(id) {
+  const n = id ? NOTES.find(x => x.id === id) : { id: null, title: '', body: '' }; if (!n) return;
+  let o = $('#nedit'); if (!o) { o = document.createElement('div'); o.id = 'nedit'; o.className = 'ovl'; document.body.appendChild(o); }
+  o.innerHTML = `<div class="phead"><button type="button" id="nclose">‹ رجوع للتركيبات</button></div><div class="pcard" data-nid="${n.id || ''}">
+    <label class="lbl" style="margin-top:0">اسم التركيبة</label><input type="text" id="n-title" value="${esc(n.title)}" placeholder="مثال: تركيبة بريل ليمون">
+    <label class="lbl">المكونات والكميات والخطوات</label><textarea id="n-body" rows="14" placeholder="اكتب المكونات والكميات وطريقة التحضير هنا...">${esc(n.body)}</textarea>
+    <button class="abtn" type="button" id="n-save">حفظ</button>${n.id ? '<button class="abtn danger" type="button" id="n-del">حذف التركيبة</button>' : ''}<div class="msg" id="n-msg"></div></div>`;
+  o.hidden = false; o.scrollTop = 0; document.body.style.overflow = 'hidden';
+}
+function closeNote() { const o = $('#nedit'); if (o) o.hidden = true; document.body.style.overflow = ''; renderNotes(); }
+document.addEventListener('input', e => { if (e.target.id === 'nsearch') renderNotes(); });
+document.addEventListener('click', async e => {
+  const t = e.target; if (!t.closest) return;
+  const sw = t.closest('[data-ms]'); if (sw) { setMS(sw.dataset.ms); return; }
+  if (t.id === 'nnew') { openNote(null); return; }
+  const nb = t.closest('[data-note]'); if (nb) { openNote(+nb.dataset.note); return; }
+  if (t.id === 'nclose') { closeNote(); return; }
+  if (t.id === 'n-save') {
+    const id = $('#nedit .pcard').dataset.nid; const title = $('#n-title').value.trim(); const m = $('#n-msg');
+    if (!title) { m.className = 'msg err'; m.textContent = 'اكتب اسم التركيبة'; return; }
+    m.className = 'msg'; m.textContent = 'بيحفظ...';
+    const r = await rpc('admin_save_note', { p_pin: PIN, p_id: id ? +id : null, p_title: title, p_body: $('#n-body').value }).catch(() => null);
+    if (r && r.ok && r.data) { m.className = 'msg ok'; m.textContent = '✅ اتحفظت'; $('#nedit .pcard').dataset.nid = r.data; await loadNotes(); } else { m.className = 'msg err'; m.textContent = 'فشل الحفظ — جرّب تاني'; }
+    return;
+  }
+  if (t.id === 'n-del') { if (!confirm('تمسح التركيبة دي نهائي؟')) return; const id = +$('#nedit .pcard').dataset.nid; const r = await rpc('admin_del_note', { p_pin: PIN, p_id: id }).catch(() => null); if (r && r.ok) { await loadNotes(); closeNote(); } }
+});
+function setMS(v) {
+  $('#matbox').hidden = v !== 'mat'; $('#recbox').hidden = v !== 'rec';
+  document.querySelectorAll('[data-ms]').forEach(b => b.classList.toggle('on', b.dataset.ms === v));
+  if (v === 'rec') loadNotes(); else loadMats();
+}
