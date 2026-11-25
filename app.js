@@ -16,7 +16,7 @@ let FEE = store.get('fee', 25);
 const grand = () => total() + FEE;
 let PAY = store.get('pay', 'cash'); if (PAY !== 'vodafone') PAY = 'cash';
 let VF = store.get('vf', '01028540358');
-const vfLine = () => `ادفع بسهولة بفودافون كاش على الرقم ده <b dir="ltr">${esc(VF)}</b> <button type="button" class="vfcopy" data-copy="${esc(VF)}">نسخ</button> وهيوصلك طلبك`;
+const vfLine = () => `للدفع عبر فودافون كاش، حوّل إجمالي طلبك على الرقم التالي، ونتشرف بخدمتك 🌹<div style="margin-top:6px"><b dir="ltr">${esc(VF)}</b> <button type="button" class="vfcopy" data-copy="${esc(VF)}">نسخ</button></div>`;
 const payLabel = p => p === 'vodafone' ? 'فودافون كاش' : 'كاش عند الاستلام';
 const THX = 'سعداء بخدمة حضرتك 🌹';
 async function loadFee() { try { const r = await fetch(SUPA_URL + '/rest/v1/app_settings?select=key,value&key=in.(delivery_fee,vodafone_number)', { headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON } }); const d = await r.json(); if (!Array.isArray(d)) return; d.forEach(x => { if (x.key === 'delivery_fee') { const v = parseFloat(x.value); if (!isNaN(v)) { FEE = v; store.set('fee', v); } } if (x.key === 'vodafone_number') { VF = (x.value || '').trim(); store.set('vf', VF); } }); render(true); } catch (e) {} }
