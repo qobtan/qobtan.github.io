@@ -271,3 +271,9 @@ html,body{background:#0b141a !important}
 .card .t{font-size:19px !important}
 .card .pr{font-size:16px !important}
 .card .pr b{font-size:22px !important}
+
+/* v82: music note sound button in header */
+.hero{position:relative}
+#muteBtn{position:absolute !important;top:calc(env(safe-area-inset-top) + 12px) !important;bottom:auto !important;left:14px !important;right:auto !important;width:40px !important;height:40px !important;border-radius:50% !important;background:rgba(255,255,255,.12) !important;border:1px solid rgba(245,201,69,.7) !important;font-size:20px !important;color:#f5c945;display:flex;align-items:center;justify-content:center;z-index:5 !important}
+#muteBtn.off{opacity:.6;background:rgba(255,255,255,.06) !important}
+#muteBtn.off::after{content:"";position:absolute;width:30px;height:3px;border-radius:2px;background:#f5c945;transform:rotate(-45deg);box-shadow:0 0 0 1.5px #071c35}

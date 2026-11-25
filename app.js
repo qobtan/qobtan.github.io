@@ -329,10 +329,10 @@ document.addEventListener('visibilitychange', () => { if (!BG) return; if (docum
   const m = document.createElement('button');
   m.id = 'muteBtn'; m.type = 'button'; m.setAttribute('aria-label', 'الصوت');
   m.setAttribute('style', 'position:fixed;top:10px;left:10px;z-index:50;width:34px;height:34px;border-radius:50%;border:1px solid rgba(245,201,69,.6);background:rgba(7,27,49,.55);color:#f5c945;font-size:16px;line-height:1;padding:0;cursor:pointer');
-  const paint = () => { m.textContent = muted ? '🔇' : '🔊'; };
+  const paint = () => { m.textContent = '🎵'; m.classList.toggle('off', muted); m.setAttribute('aria-pressed', muted ? 'true' : 'false'); };
   paint();
   m.addEventListener('click', () => { muted = !muted; try { localStorage.setItem('mute', muted ? '1' : '0'); } catch (e) {} paint(); bgmSync(); if (!muted) play('tick'); });
-  document.body.appendChild(m);
+  (document.querySelector('.hero') || document.body).appendChild(m);
 })();
 
 /* myOrdersRefresh */
