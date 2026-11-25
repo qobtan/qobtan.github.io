@@ -213,3 +213,11 @@ html,body{overscroll-behavior-y:contain}
 #ptr i{width:20px;height:20px;border-radius:50%;border:3px solid #d9a93a55;border-top-color:#f9e08f;display:block}
 #ptr.go i{animation:ptrs .8s linear infinite}@keyframes ptrs{to{transform:rotate(360deg)}}
 .tabs{top:6px !important}.tabs.stuck{box-shadow:0 0 0 10px #15365f,0 10px 22px rgba(0,0,0,.4) !important}
+
+/* v65: no frames */
+.card{border:0 !important;box-shadow:0 6px 18px rgba(0,0,0,.28) !important}
+.card.in{border:0 !important;box-shadow:0 6px 20px rgba(217,169,58,.38) !important}
+.card .pw{box-shadow:none !important}
+.pw img,.pw .ph{border:0 !important}
+.dimg{border:0 !important;box-shadow:0 6px 18px rgba(0,0,0,.28) !important}
+.dimg img,.dimg .ph{border:0 !important}
