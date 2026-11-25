@@ -162,3 +162,44 @@ loadFee();
   } catch (e) {}
   timer = setTimeout(() => { if (!started) close(); }, 3800);
 })();
+
+/* uiSounds */
+(function () {
+  let ctx = null, muted = false;
+  try { muted = localStorage.getItem('mute') === '1'; } catch (e) {}
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const get = () => { if (!AC) return null; if (!ctx) { try { ctx = new AC(); } catch (e) { return null; } } if (ctx.state === 'suspended') ctx.resume().catch(() => {}); return ctx; };
+  const tone = (c, f, t0, dur, vol, type, f2) => {
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(f, t0); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+  };
+  const play = kind => {
+    if (muted) return; const c = get(); if (!c) return; const t = c.currentTime + 0.005;
+    if (kind === 'add') { tone(c, 660, t, 0.09, 0.12, 'sine'); tone(c, 990, t + 0.07, 0.14, 0.12, 'sine'); }
+    else if (kind === 'ok') { tone(c, 523, t, 0.12, 0.12, 'sine'); tone(c, 659, t + 0.1, 0.12, 0.12, 'sine'); tone(c, 784, t + 0.2, 0.22, 0.12, 'sine'); }
+    else if (kind === 'minus') { tone(c, 520, t, 0.05, 0.1, 'triangle', 360); }
+    else if (kind === 'tab') { tone(c, 700, t, 0.05, 0.09, 'triangle', 520); }
+    else { tone(c, 900, t, 0.035, 0.1, 'triangle', 600); }
+  };
+  window.uiSound = play;
+  const kindOf = el => {
+    if (el.closest('#salatSplash')) return null;
+    if (el.closest('#place')) return 'ok';
+    if (el.closest('[data-add]')) return 'add';
+    const b = el.closest('button, .pay b, .pay s, a, [data-tab], [data-d], [data-det], .card');
+    if (!b) return null;
+    if (b.dataset && b.dataset.tab) return 'tab';
+    if (b.textContent.trim() === '−' || b.textContent.trim() === '-') return 'minus';
+    return 'tick';
+  };
+  addEventListener('pointerdown', e => { if (e.target.closest && e.target.closest('#muteBtn')) return; const k = e.target.closest ? kindOf(e.target) : null; if (k) play(k); }, true);
+  const m = document.createElement('button');
+  m.id = 'muteBtn'; m.type = 'button'; m.setAttribute('aria-label', 'الصوت');
+  m.setAttribute('style', 'position:fixed;top:10px;left:10px;z-index:50;width:34px;height:34px;border-radius:50%;border:1px solid rgba(245,201,69,.6);background:rgba(7,27,49,.55);color:#f5c945;font-size:16px;line-height:1;padding:0;cursor:pointer');
+  const paint = () => { m.textContent = muted ? '🔇' : '🔊'; };
+  paint();
+  m.addEventListener('click', () => { muted = !muted; try { localStorage.setItem('mute', muted ? '1' : '0'); } catch (e) {} paint(); if (!muted) play('tick'); });
+  document.body.appendChild(m);
+})();
