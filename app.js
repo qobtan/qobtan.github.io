@@ -130,3 +130,23 @@ async function liveProducts() {
   } catch (e) {}
 }
 liveProducts();
+
+/* salatSplash */
+(function () {
+  const s = document.createElement('div');
+  s.id = 'salatSplash';
+  s.setAttribute('style', 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 35%,#123a63,#071b31);transition:opacity .7s ease;opacity:1;cursor:pointer');
+  s.innerHTML = '<div style="text-align:center;padding:24px"><div style="width:70px;height:2px;margin:0 auto 22px;background:#f5c945;border-radius:2px"></div><div style="font-size:34px;font-weight:800;color:#f5c945;line-height:1.7;font-family:inherit">صلّي على النبي محمد ﷺ</div><div style="width:70px;height:2px;margin:22px auto 0;background:#f5c945;border-radius:2px"></div><div style="margin-top:18px;font-size:14px;color:#d9e2ee">منظفات القبطان</div></div>';
+  document.body.appendChild(s);
+  try {
+    const au = new Audio('salat.mp3'); au.preload = 'auto';
+    const go = () => { au.play().catch(() => {}); };
+    au.play().catch(() => {
+      const once = () => { go(); ['pointerdown', 'touchstart', 'keydown'].forEach(t => removeEventListener(t, once, true)); };
+      ['pointerdown', 'touchstart', 'keydown'].forEach(t => addEventListener(t, once, true));
+    });
+  } catch (e) {}
+  const close = () => { s.style.opacity = '0'; s.style.pointerEvents = 'none'; setTimeout(() => s.remove(), 800); };
+  s.addEventListener('click', close);
+  setTimeout(close, 3800);
+})();
