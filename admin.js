@@ -173,6 +173,7 @@ async function loadStock() {
 const stkOf = id => (STK[String(id)] === undefined ? null : +STK[String(id)]);
 function lowCount() { return (rows || []).filter(p => { const s = stkOf(p.id); return s !== null && s < 3; }).length; }
 function renderList() {
+  if (ORD) return renderOrd();
   const q = ($('#psearch').value || '').trim().toLowerCase();
   const list = rows.filter(p => !q || (p.name || '').toLowerCase().includes(q));
   $('#pcount').textContent = list.length + ' منتج';
@@ -180,6 +181,23 @@ function renderList() {
   const lw = $('#lowwarn'); if (lw) { lw.hidden = !lc; lw.textContent = '⚠️ ' + lc + ' منتج المخزون بتاعه أقل من ٣ قطع: ' + (rows || []).filter(p => { const s = stkOf(p.id); return s !== null && s < 3; }).map(p => p.name).join('، '); }
   $('#list').innerHTML = list.map(p => { const sk = stkOf(p.id); const low = sk !== null && sk < 3; return `<button class="pli ${low ? 'low' : ''}" type="button" data-open="${p.id}"><img src="${esc(p.img || 'logo.jpg')}" alt=""><span class="pn">${esc(p.name)}${p.detail ? `<small>${esc(p.detail)}</small>` : ''}<small class="stk ${low ? 'lowt' : ''}">${sk === null ? 'المخزون: مش مسجل' : (low ? '⚠️ ' : '') + 'المخزون: ' + sk + ' قطعة'}</small></span><b>${+p.price || 0} <em>ج</em></b><i>‹</i></button>`; }).join('') || '<div class="pempty">مفيش منتج بالاسم ده</div>';
 }
+
+let ORD = false;
+function renderOrd() {
+  $('#pcount').textContent = 'رتّب المنتجات بالأسهم: اللي فوق بيظهر الأول للعملاء';
+  $('#list').innerHTML = rows.map((p, i) => `<div class="pli rord"><span class="mv"><button type="button" data-mv="-1" data-id="${p.id}" ${i === 0 ? 'disabled' : ''} aria-label="فوق">▲</button><button type="button" data-mv="1" data-id="${p.id}" ${i === rows.length - 1 ? 'disabled' : ''} aria-label="تحت">▼</button></span><em class="no">${i + 1}</em><img src="${esc(p.img || 'logo.jpg')}" alt=""><span class="pn">${esc(p.name)}${p.detail ? `<small>${esc(p.detail)}</small>` : ''}</span></div>`).join('');
+}
+async function saveOrder() {
+  const r = await rpc('admin_set_order', { p_pin: PIN, p_ids: rows.map(p => p.id) }).catch(() => null);
+  const m = $('#ordmsg'); if (m) { m.textContent = (r && r.ok) ? '✓ اتحفظ' : 'فشل الحفظ، جرّب تاني'; m.style.color = (r && r.ok) ? '#1a7f37' : '#b3261e'; }
+  if (!(r && r.ok)) load();
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest && e.target.closest('#ordbtn');
+  if (t) { ORD = !ORD; t.textContent = ORD ? '✓ تم' : '↕ ترتيب'; const ps = $('#psearch'); if (ps) { ps.hidden = ORD; ps.value = ''; } const ab = $('#addnew'); if (ab) ab.hidden = ORD; const m = $('#ordmsg'); if (m) m.textContent = ''; renderList(); return; }
+  const b = e.target.closest && e.target.closest('[data-mv]');
+  if (b && ORD) { const i = rows.findIndex(p => p.id === +b.dataset.id), j = i + +b.dataset.mv; if (i < 0 || j < 0 || j >= rows.length) return; const x = rows[i]; rows[i] = rows[j]; rows[j] = x; rows.forEach((p, k) => { p.sort = (k + 1) * 10; }); renderOrd(); saveOrder(); }
+});
 function openEdit(id) {
   const p = rows.find(x => x.id === id); if (!p) return;
   let o = $('#pedit');
