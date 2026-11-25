@@ -206,3 +206,10 @@ main{padding-top:18px}
 
 .tabs button[hidden]{display:none !important}.tabs{gap:2px !important;padding:4px !important}.tabs button{font-size:13px !important;padding:11px 2px !important;white-space:nowrap;letter-spacing:0}.tabs #badge,.tabs #obadge{font-size:11px !important;padding:1px 5px !important}
 .rg{grid-template-columns:repeat(2,1fr) !important;gap:10px !important}
+
+/* v63 */
+html,body{overscroll-behavior-y:contain}
+#ptr{position:fixed;top:0;left:50%;transform:translate(-50%,-70px);z-index:99998;display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#0d2f55,#071b31);color:#f9e08f;border:1.5px solid #d9a93a;border-radius:999px;padding:8px 16px;font-weight:800;font-size:14px;box-shadow:0 6px 18px rgba(0,0,0,.35);opacity:0;pointer-events:none}
+#ptr i{width:20px;height:20px;border-radius:50%;border:3px solid #d9a93a55;border-top-color:#f9e08f;display:block}
+#ptr.go i{animation:ptrs .8s linear infinite}@keyframes ptrs{to{transform:rotate(360deg)}}
+.tabs{top:6px !important}.tabs.stuck{box-shadow:0 0 0 10px #15365f,0 10px 22px rgba(0,0,0,.4) !important}

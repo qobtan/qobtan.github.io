@@ -395,3 +395,24 @@ function loadRevData() {
   rp('get_review_imgs', {}).then(l => { done(); if (Array.isArray(l)) { const o = JSON.stringify(IMGS); IMGS = l; store.set('rimgs', l); if (JSON.stringify(l) !== o) upd(); else syncRevTab(); } });
   rp('get_reviews', {}).then(r => { done(); if (r && typeof r.count === 'number') { const old = JSON.stringify(REVS); REVS = r; store.set('revs', r); if (JSON.stringify(r) !== old) upd(); else syncRevTab(); } });
 }
+
+/* ===== سحب للتحديث ===== */
+(function () {
+  const ind = document.createElement('div'); ind.id = 'ptr'; ind.innerHTML = '<i></i><span>اسحب للتحديث</span>'; document.body.appendChild(ind);
+  const sp = ind.querySelector('span'); let y0 = 0, dy = 0, on = false, busy = false; const TH = 80;
+  const set = (d, txt) => { ind.style.transform = 'translate(-50%,' + (d - 70) + 'px)'; ind.style.opacity = Math.min(1, d / 40); ind.querySelector('i').style.transform = 'rotate(' + (d * 4) + 'deg)'; if (txt) sp.textContent = txt; };
+  addEventListener('touchstart', e => { if (busy || e.touches.length !== 1) return; if ((window.scrollY || document.documentElement.scrollTop || 0) > 0 || document.querySelector('[style*="z-index:99999"]')) { on = false; return; } y0 = e.touches[0].clientY; dy = 0; on = true; }, { passive: true });
+  addEventListener('touchmove', e => { if (!on || busy) return; const d = e.touches[0].clientY - y0; if (d <= 0) { dy = 0; set(0); return; } if ((window.scrollY || 0) > 0) { on = false; set(0); return; } dy = Math.min(d * 0.5, 110); if (e.cancelable) e.preventDefault(); ind.classList.remove('go'); set(dy, dy >= TH ? 'سيب للتحديث' : 'اسحب للتحديث'); }, { passive: false });
+  const end = async () => {
+    if (!on || busy) return; on = false;
+    if (dy < TH) { ind.style.transition = 'transform .25s,opacity .25s'; set(0); setTimeout(() => { ind.style.transition = ''; }, 300); return; }
+    busy = true; ind.style.transition = 'transform .2s'; set(TH - 20, 'بيتحدّث...'); ind.classList.add('go');
+    try { const rg = await navigator.serviceWorker.getRegistrations(); await Promise.all(rg.map(r => r.update().catch(() => {}))); } catch (e) {}
+    try { const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); } catch (e) {}
+    try { const rg = await navigator.serviceWorker.getRegistrations(); await Promise.all(rg.map(r => r.unregister())); } catch (e) {}
+    setTimeout(() => location.reload(), 350);
+  };
+  addEventListener('touchend', end, { passive: true }); addEventListener('touchcancel', end, { passive: true });
+})();
+
+(function(){const n=document.querySelector('.tabs');if(!n)return;const f=()=>n.classList.toggle('stuck',(window.scrollY||0)>110);addEventListener('scroll',f,{passive:true});f();})();
