@@ -233,61 +233,22 @@ html,body{overscroll-behavior-y:contain}
 .card .sz{color:#7a5410;font-size:12.5px;font-weight:700;margin:-2px 10px 0 !important;opacity:.9}
 .card .more{margin-top:0 !important}
 
-/* v68: white background */
-html,body{background:#fff !important}
-.empty,.hint,.note,.empty b,.f>span,.desc,.dd,.hint2{color:#33465c !important}
-.empty b{color:#0b2a4a !important}
-.sec span,.sec em,.sec,.dt,.thx{color:#0b2a4a !important;text-shadow:none !important}
-.dp{color:#33465c !important}.dp b{color:#0b2a4a !important}
-main>.back,.back{color:#8a5f0a !important;font-weight:700}
-.msg-p{color:#8a5f0a !important}
-.invh{color:#0b2a4a}.invh h2{color:#0b2a4a !important}.invh p{color:#33465c !important}
-.rv-h h3{color:#0b2a4a !important}.rv-a{color:#0b2a4a !important}.rv-a b{color:#8a5f0a !important}.rv-a small{color:#4a5a6e !important}
-.rv-st{color:#d9a93a}.rv-st i{color:#cdd5e0}
-.rg-t{color:#8a5f0a !important}
-.card{border:1px solid #ead9a6 !important;box-shadow:0 4px 16px rgba(11,42,74,.12) !important}
-.card.in{border:1px solid #d9a93a !important;box-shadow:0 4px 16px rgba(217,169,58,.35) !important}
-.dimg{border:1px solid #ead9a6 !important;box-shadow:0 4px 16px rgba(11,42,74,.12) !important}
-.search input,#q{border:1px solid #e1e8f2 !important;box-shadow:0 2px 8px rgba(11,42,74,.08)}
-.tabs{border:1px solid #ead9a6 !important;box-shadow:0 4px 16px rgba(11,42,74,.14) !important}
-.tabs.stuck{box-shadow:0 0 0 10px #fff,0 10px 18px rgba(11,42,74,.18) !important}
-.invc,.invs div,.invp{box-shadow:0 2px 10px rgba(11,42,74,.08)}
-.ord,.oc{box-shadow:0 2px 10px rgba(11,42,74,.08)}
-.hero .dt,.hero .dlv .dt,.dlv .dt{color:#f6e7b4 !important}
-
-/* v70: frameless cards on white */
-.card,.card.in{background:transparent !important;border:0 !important;box-shadow:none !important;border-radius:0 !important;overflow:visible !important;padding:0 0 14px !important;gap:5px !important}
-.card .pw img,.card .pw .ph{border-radius:18px !important}
-.card .t,.card .more,.card .pr,.card .sz,.card .soon{margin-left:2px !important;margin-right:2px !important}
-.card .sz{margin-top:-1px !important}
-.card .step,.card .add{width:100% !important;margin-left:0 !important;margin-right:0 !important}
-.card .pr b{text-shadow:none !important}
-.dimg{border:0 !important;box-shadow:none !important;background:transparent !important}
-.grid{gap:14px 12px !important}
-
-/* v71: clean white cards */
-.card,.card.in{background:#fff !important;border:1px solid #e3e7ee !important;border-radius:14px !important;overflow:hidden !important;box-shadow:0 2px 8px rgba(11,42,74,.08) !important;padding:0 0 12px !important;gap:6px !important}
-.card.in{border-color:#9fb3cc !important}
-.card .pw{margin:0 !important;border-radius:0 !important;box-shadow:none !important}
-.card .pw img,.card .pw .ph{border-radius:0 !important;border:0 !important;width:100% !important;display:block}
-.card .t,.card .more,.card .pr,.card .sz,.card .soon{margin-left:10px !important;margin-right:10px !important}
-.card .step,.card .add{width:calc(100% - 20px) !important;margin-left:10px !important;margin-right:10px !important;box-sizing:border-box}
-.dimg{background:#fff !important;border:1px solid #e3e7ee !important;border-radius:14px !important;box-shadow:0 2px 8px rgba(11,42,74,.08) !important;overflow:hidden !important}
-.dimg img,.dimg .ph{border:0 !important;border-radius:0 !important}
-.grid{gap:12px !important}
-
 /* v72: catalog look, flat */
 .card,.card.in{background:transparent !important;border:0 !important;box-shadow:none !important;border-radius:0 !important;overflow:visible !important;padding:0 0 12px !important;gap:3px !important}
 .card .pw{border-radius:16px !important;overflow:hidden !important;margin:0 0 4px !important}
 .card .pw img,.card .pw .ph{border-radius:16px !important;width:100% !important;display:block}
 .card .t,.card .more,.card .pr,.card .sz,.card .soon,.card .ds{margin-left:2px !important;margin-right:2px !important}
-.card .t{font-weight:800 !important;font-size:14px !important;line-height:1.35 !important;color:#0b2a4a !important}
-.card .ds{font-size:12px;color:#8a929c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
-.card .sz{font-size:12px !important;color:#6b7480 !important}
+.card .t{font-weight:800 !important;font-size:14px !important;line-height:1.35 !important;color:#fff !important}
+.card .ds{font-size:12px;color:#8696a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
+.card .sz{font-size:12px !important;color:#8696a0 !important}
 .card .more{display:none !important}
-.card .pr{font-size:13px !important;color:#8a929c !important}
-.card .pr b{font-size:15px !important;color:#0b2a4a !important}
+.card .pr{font-size:13px !important;color:#e9c46a !important}
+.card .pr b{font-size:15px !important;color:#fff !important;text-shadow:none !important}
 .card .step,.card .add{width:auto !important;align-self:flex-start;margin:4px 2px 0 !important;height:30px !important;min-height:0 !important;padding:0 14px !important;font-size:12px !important;border-radius:15px !important}
 .card .step{padding:0 !important}
 .card .step button{width:30px !important;height:30px !important}
 .grid{gap:10px 14px !important}
+
+html,body{background:#0b141a !important}
+.tabs.stuck{box-shadow:0 0 0 10px #0b141a,0 10px 18px rgba(0,0,0,.4) !important}
+.dimg{background:transparent !important;border:0 !important;box-shadow:none !important;border-radius:16px !important;overflow:hidden !important}
