@@ -65,7 +65,7 @@ function cartView() {
   <label class="f"><span>رقم التليفون</span><input type="tel" id="f-phone" value="${esc(info.phone)}" autocomplete="tel"></label>
   <label class="f"><span>العنوان بالتفصيل</span><input type="text" id="f-address" value="${esc(info.address)}" autocomplete="street-address"></label>
   <div class="f"><span>طريقة الدفع</span><div class="pay"><button type="button" class="pb${PAY === 'cash' ? ' on' : ''}" data-pay="cash">كاش عند الاستلام</button><button type="button" class="pb${PAY === 'vodafone' ? ' on' : ''}" data-pay="vodafone">فودافون كاش</button></div></div>
-  ${PAY === 'vodafone' ? `<div class="vfnote">هنكلمك على رقمك عشان نكمل التحويل بفودافون كاش.${VF ? `<br>رقم فودافون كاش: <b dir="ltr">${esc(VF)}</b> <button type="button" class="vfcopy" data-copy="${esc(VF)}">نسخ</button>` : ''}</div>` : ''}
+  ${PAY === 'vodafone' && VF ? `<div class="vfnote">${VF ? `رقم فودافون كاش: <b dir="ltr">${esc(VF)}</b> <button type="button" class="vfcopy" data-copy="${esc(VF)}">نسخ</button>` : ''}</div>` : ''}
   <div id="sendbox"></div><div class="note">الطلب بيوصل لمنظفات القبطان على طول، ومش بيتأكد غير لما يكلموك.</div>`);
   if (L.length) {
     const upd = () => { $('#sendbox').innerHTML = ready() ? `<button class="wa" id="place" type="button" style="width:100%;border:0;cursor:pointer;font-family:inherit">ابعت الطلب</button><div class="msg-p" id="pmsg" style="text-align:center;margin-top:8px;font-size:13px"></div>` : '<div class="hint">اكتب الاسم والتليفون والعنوان عشان زرار الإرسال يظهر.</div>'; };
@@ -102,7 +102,7 @@ async function placeOrder(btn) {
     if (!r.ok || typeof id !== 'number') throw new Error('x');
     const wl = waLink(); const gt = grand(); const payP = PAY; try { if (localStorage.getItem('mute') !== '1') { const oa = new Audio('order.mp3'); oa.play().catch(() => {}); } } catch (e) {}
     cart = {}; store.set('cart', cart); badge();
-    view.innerHTML = `<div class="empty"><b style="font-size:20px">✅ الطلب اتبعت</b><br>رقم طلبك #${id}<br>الإجمالي ${money(gt)} (شامل التوصيل)<br>${THX}<br>${payP === 'vodafone' ? 'هنكلمك على رقمك عشان نكمل التحويل بفودافون كاش.' : 'هنكلمك على رقمك لتأكيد الطلب والتوصيل.'}<br><button class="go" data-tab="shop">رجوع للمنتجات</button></div>`;
+    view.innerHTML = `<div class="empty"><b style="font-size:20px">✅ الطلب اتبعت</b><br>رقم طلبك #${id}<br>الإجمالي ${money(gt)} (شامل التوصيل)<br>${THX}<br>${payP === 'vodafone' ? '' : 'هنكلمك على رقمك لتأكيد الطلب والتوصيل.'}<br><button class="go" data-tab="shop">رجوع للمنتجات</button></div>`;
   } catch (err) {
     btn.disabled = false; btn.textContent = 'ابعت الطلب';
     msg.style.color = '#b3261e'; msg.innerHTML = 'مفيش اتصال أو حصلت مشكلة. جرّب تاني، أو ابعت الطلب على واتساب: <a href="' + waLink() + '" target="_blank" rel="noopener" style="color:#1a9a52;font-weight:700">واتساب</a>';
