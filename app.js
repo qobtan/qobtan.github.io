@@ -111,6 +111,7 @@ async function sendRate(id, btn) {
 const MYST = { new: 'استلمنا طلبك', confirmed: 'اتأكد طلبك', shipping: 'في الطريق ليك' };
 const MYSTEPS = ['new', 'confirmed', 'shipping'];
 async function loadMyOrders() {
+  fcmSync();
   if (!MYO.length) { MYDATA = []; MYERR = false; if (tab === 'orders') render(true); badge(); return; }
   try {
     const r = await fetch(SUPA_URL + '/rest/v1/rpc/my_orders', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_refs: MYO }) });
@@ -127,7 +128,7 @@ const fmtDate = s => { try { return new Date(s).toLocaleString('ar-EG', { weekda
 
 const VAPID = 'BF7ApvD2DmsAO2DFWle6vjJAb0OwRMxrap55nxCvBgSzRwkWaQciiNu2mdDWG6NBJeFn0GIUN3oaA9UFNKx_RGU';
 const u8 = s => { const p = '='.repeat((4 - s.length % 4) % 4); const b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...b].map(c => c.charCodeAt(0))); };
-const canPush = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const canPush = () => !window.AndroidFCM && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 async function pushSave(ref) {
   const reg = await navigator.serviceWorker.ready;
   let sub = await reg.pushManager.getSubscription();
@@ -148,6 +149,20 @@ async function enablePush(btn) {
     if (!ok) { say('الإذن اتفعّل بس التسجيل ما كملش (' + esc(err.slice(0, 80)) + '). جرّب تاني بعد شوية.'); return; }
     store.set('pushon', 1); JUST && (JUST.askPush = false); btn.parentNode.innerHTML = '🔔 تمام، هنبعتلك إشعار مع كل خطوة في طلبك';
   } catch (e) { say('حصلت مشكلة (' + esc(((e && e.name) || '') + ' ' + ((e && e.message) || '')).slice(0, 90) + ').'); }
+}
+
+async function fcmSync() {
+  try {
+    if (!window.AndroidFCM) return;
+    const t = AndroidFCM.token(); if (!t) return;
+    const done = store.get('fcmdone', {});
+    for (const o of MYO) {
+      const k = o.id + ':' + t.slice(-12);
+      if (done[k]) continue;
+      const r = await fetch(SUPA_URL + '/rest/v1/rpc/save_fcm', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_id: o.id, p_token: o.token, p_fcm: t }) });
+      if (r.ok && (await r.json()) === true) { done[k] = 1; store.set('fcmdone', done); }
+    }
+  } catch (e) {}
 }
 let JUST = null;
 function ordersView() {

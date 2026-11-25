@@ -1,0 +1,21 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ربط الإشعارات</title>
+<style>body{margin:0;font-family:system-ui,sans-serif;background:#0b1b3a;color:#f5e6b8;padding:20px}.c{max-width:420px;margin:auto;background:#12275a;border:1px solid #d4af37;border-radius:16px;padding:20px}h2{margin-top:0;color:#d4af37}input,button{width:100%;box-sizing:border-box;padding:14px;margin:8px 0;border-radius:10px;border:1px solid #d4af37;font-size:16px}input{background:#fff;color:#000}button{background:#d4af37;color:#0b1b3a;font-weight:700}#m{margin-top:10px;font-weight:700}</style></head><body><div class="c">
+<h2>ربط إشعارات الموبايل</h2>
+<p>1) اكتب الرقم السري للإدارة<br>2) اختار ملف المفتاح (.json) اللي نزّلته من Firebase<br>3) دوس إرسال</p>
+<input id="pin" type="password" inputmode="numeric" placeholder="الرقم السري للإدارة" autocomplete="off">
+<input id="f" type="file" accept=".json,application/json,text/plain,*/*">
+<button id="go">إرسال</button><div id="m"></div></div>
+<script>
+const U='https://aiqfiiuozweqbqlgivqj.supabase.co',K='sb_publishable_POz8lTd9lNj2xId7tzghHQ_dkEbX3n9';
+const m=t=>document.getElementById('m').textContent=t;
+document.getElementById('go').onclick=async()=>{
+ const pin=document.getElementById('pin').value.trim(),f=document.getElementById('f').files[0];
+ if(!pin||!f){m('اكتب الرقم السري واختار الملف');return}
+ let t=await f.text();
+ try{const j=JSON.parse(t);if(!j.private_key||!j.client_email){m('الملف ده مش مفتاح الخدمة الصح');return}}catch(e){m('الملف مش مقروء كنص JSON');return}
+ m('جاري الإرسال...');
+ try{const r=await fetch(U+'/rest/v1/rpc/set_fcm_sa',{method:'POST',headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json'},body:JSON.stringify({p_pin:pin,p_json:t})});
+ const b=await r.text();
+ if(r.ok){m('تم الربط ✅ المشروع: '+JSON.parse(b))}else{m(/invalid pin/.test(b)?'الرقم السري غلط':'حصل خطأ، ابعتلي الصورة')}}catch(e){m('مفيش اتصال')}
+};
+</script></body></html>
