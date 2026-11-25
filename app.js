@@ -152,7 +152,7 @@ loadFee();
   try {
     const a1 = new Audio('salat.mp3'), a2 = new Audio('welcome.mp3'); a1.preload = 'auto'; a2.preload = 'auto';
     a1.onplaying = () => { if (started) return; started = true; clearTimeout(timer); timer = setTimeout(close, 15000); };
-    a1.onended = () => { if (closed) return; setTimeout(() => { if (closed) return; show('أهلاً وسهلاً بكم', 'في منظفات القبطان'); a2.play().catch(() => {}); }, 3000); };
+    a1.onended = () => { setTimeout(() => { if (!closed) show('أهلاً وسهلاً بكم', 'في منظفات القبطان'); a2.play().catch(() => {}); }, 3000); };
     a2.onended = () => setTimeout(close, 500);
     const go = () => { a1.play().catch(() => {}); };
     a1.play().catch(() => {
