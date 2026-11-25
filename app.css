@@ -128,3 +128,10 @@ body{background:linear-gradient(180deg,#9fb0ca 0,#b4c1d6 360px,#bcc8db 100%) fix
 .tabs{background:#f1f4f9}
 .empty,.hint,.note{color:#3d4f68}
 .dimg{background:#fff}
+
+/* ===== flat navy v43 ===== */
+html,body{background:#15365f !important}
+body{background-image:none !important}
+.card{background:#f6f8fb;border:1.5px solid #d9a93a}
+.empty,.hint,.note{color:#cdd9ea}
+.sum,.l2{color:#14202e}
