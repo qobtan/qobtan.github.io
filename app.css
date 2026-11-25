@@ -264,3 +264,14 @@ main>.back,.back{color:#8a5f0a !important;font-weight:700}
 .card .pr b{text-shadow:none !important}
 .dimg{border:0 !important;box-shadow:none !important;background:transparent !important}
 .grid{gap:14px 12px !important}
+
+/* v71: clean white cards */
+.card,.card.in{background:#fff !important;border:1px solid #e3e7ee !important;border-radius:14px !important;overflow:hidden !important;box-shadow:0 2px 8px rgba(11,42,74,.08) !important;padding:0 0 12px !important;gap:6px !important}
+.card.in{border-color:#9fb3cc !important}
+.card .pw{margin:0 !important;border-radius:0 !important;box-shadow:none !important}
+.card .pw img,.card .pw .ph{border-radius:0 !important;border:0 !important;width:100% !important;display:block}
+.card .t,.card .more,.card .pr,.card .sz,.card .soon{margin-left:10px !important;margin-right:10px !important}
+.card .step,.card .add{width:calc(100% - 20px) !important;margin-left:10px !important;margin-right:10px !important;box-sizing:border-box}
+.dimg{background:#fff !important;border:1px solid #e3e7ee !important;border-radius:14px !important;box-shadow:0 2px 8px rgba(11,42,74,.08) !important;overflow:hidden !important}
+.dimg img,.dimg .ph{border:0 !important;border-radius:0 !important}
+.grid{gap:12px !important}
