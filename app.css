@@ -203,3 +203,6 @@ main{padding-top:18px}
 .dctl .step button{background:linear-gradient(135deg,#f9e08f,#d9a93a) !important;color:#0a2547 !important}
 .dctl .step span,.dctl .step b{color:#f9e08f !important;font-weight:800}
 
+
+.tabs button[hidden]{display:none !important}.tabs{gap:2px !important;padding:4px !important}.tabs button{font-size:13px !important;padding:11px 2px !important;white-space:nowrap;letter-spacing:0}.tabs #badge,.tabs #obadge{font-size:11px !important;padding:1px 5px !important}
+.rg{grid-template-columns:repeat(2,1fr) !important;gap:10px !important}

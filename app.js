@@ -43,7 +43,7 @@ function cardHtml(p) {
 }
 function shop() {
   view.innerHTML = `<div class="search"><input type="search" id="q" placeholder="دوّر على منتج..." value="${esc(q)}"></div>
-  <div class="sec"><span>منتجاتنا</span><em id="cnt"></em></div><div class="grid" id="grid"></div><div id="empty"></div><div id="revs"></div>${count() ? `<div class="bar"><div><span>${count()} قطعة</span><b>${money(total())}</b></div><button class="go" data-tab="cart">كمّل الطلب</button></div>` : ''}`;
+  <div class="sec"><span>منتجاتنا</span><em id="cnt"></em></div><div class="grid" id="grid"></div><div id="empty"></div>${count() ? `<div class="bar"><div><span>${count()} قطعة</span><b>${money(total())}</b></div><button class="go" data-tab="cart">كمّل الطلب</button></div>` : ''}`;
   shopGrid();
   $('#q').addEventListener('input', e => { q = e.target.value; shopGrid(); });
 }
@@ -186,7 +186,7 @@ function ordersView() {
   }
   view.innerHTML = h;
 }
-function render(keepScroll) { badge(); document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab)); const y = scrollY; if (det !== null && tab === 'shop') detailView(PRODUCTS.find(p => p.id === det)); else tab === 'shop' ? (shop(), showRevs()) : tab === 'orders' ? ordersView() : tab === 'invite' ? inviteView() : (cartView(), loadCredit()); if (keepScroll) scrollTo(0, y); }
+function render(keepScroll) { badge(); syncRevTab(); document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab)); const y = scrollY; if (det !== null && tab === 'shop') detailView(PRODUCTS.find(p => p.id === det)); else tab === 'shop' ? shop() : tab === 'reviews' ? reviewsView() : tab === 'orders' ? ordersView() : tab === 'invite' ? inviteView() : (cartView(), loadCredit()); if (keepScroll) scrollTo(0, y); }
 async function placeOrder(btn) {
   if (!ready()) return;
   const L = lines();
@@ -231,7 +231,7 @@ document.addEventListener('click', e => {
 
 const cachedLive = store.get('liveProducts', null);
 if (Array.isArray(cachedLive) && cachedLive.length) PRODUCTS = cachedLive;
-render(); if (tab === 'orders') loadMyOrders();
+render(); loadRevData(); if (tab === 'orders') loadMyOrders();
 async function liveProducts() {
   try {
     const r = await fetch(SUPA_URL + '/rest/v1/products?select=*&order=sort.asc', { headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON } });
@@ -387,9 +387,11 @@ function revHtml() {
 }
 function fillImgs() { document.querySelectorAll('#revs img[data-rid]').forEach(im => { const id = im.dataset.rid; if (IMGD[id]) { if (!im.src) im.src = IMGD[id]; return; } if (im.dataset.ld) return; im.dataset.ld = 1; rp('get_review_img', { p_id: +id }).then(v => { if (typeof v === 'string' && v) { IMGD[id] = v; im.src = v; } }); }); }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-rimg]'); if (!b) return; const src = IMGD[b.dataset.rimg] || (b.querySelector('img') || {}).src; if (!src) return; const o = document.createElement('div'); o.setAttribute('style', 'position:fixed;inset:0;z-index:99999;background:rgba(7,27,49,.94);display:flex;align-items:center;justify-content:center;padding:12px;cursor:zoom-out'); o.innerHTML = '<img src="' + src + '" style="max-width:100%;max-height:100%;border-radius:12px;box-shadow:0 0 0 2px #d9a93a">'; o.onclick = () => o.remove(); document.body.appendChild(o); });
-function showRevs() {
-  const el = $('#revs'); if (el) { el.innerHTML = revHtml(); fillImgs(); }
-  if (showRevs.busy) return; showRevs.busy = true;
-  rp('get_review_imgs', {}).then(l => { if (Array.isArray(l)) { const o = JSON.stringify(IMGS); IMGS = l; store.set('rimgs', l); if (JSON.stringify(l) !== o) { const e3 = $('#revs'); if (e3 && tab === 'shop' && det === null) { e3.innerHTML = revHtml(); fillImgs(); } } } });
-  rp('get_reviews', {}).then(r => { showRevs.busy = false; if (r && typeof r.count === 'number') { const old = JSON.stringify(REVS); REVS = r; store.set('revs', r); if (JSON.stringify(r) !== old) { const e2 = $('#revs'); if (e2 && tab === 'shop' && det === null) e2.innerHTML = revHtml(); } } });
+function syncRevTab() { const b = document.querySelector('.tabs [data-tab=reviews]'); if (!b) return; const has = !!((REVS && REVS.count) || (IMGS && IMGS.length)); b.hidden = !has; if (!has && tab === 'reviews') { tab = 'shop'; render(); } }
+function reviewsView() { view.innerHTML = '<div id="revs">' + (revHtml() || '<div class="empty">لسه مفيش آراء.</div>') + '</div>'; fillImgs(); }
+function loadRevData() {
+  if (loadRevData.busy) return; loadRevData.busy = true; let n = 2; const done = () => { if (--n === 0) loadRevData.busy = false; };
+  const upd = () => { syncRevTab(); if (tab === 'reviews') reviewsView(); };
+  rp('get_review_imgs', {}).then(l => { done(); if (Array.isArray(l)) { const o = JSON.stringify(IMGS); IMGS = l; store.set('rimgs', l); if (JSON.stringify(l) !== o) upd(); else syncRevTab(); } });
+  rp('get_reviews', {}).then(r => { done(); if (r && typeof r.count === 'number') { const old = JSON.stringify(REVS); REVS = r; store.set('revs', r); if (JSON.stringify(r) !== old) upd(); else syncRevTab(); } });
 }
