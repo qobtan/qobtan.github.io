@@ -61,7 +61,7 @@ const q=new URLSearchParams(location.search);const DEMO=q.get('demo')==='1';
     app.innerHTML=`<div class="inv"><div class="hd"><img src="logo.jpg" alt=""><h1>منظفات القبطان</h1><p>نظافة .. ثقة .. جودة</p><div class="orn">◆ ◆ ◆</div></div>
     <div class="ttl"><h2>فاتورة بيع</h2><div class="num">${NO}</div></div><div class="bd">
     <div class="cards"><div class="card"><small>فاتورة إلى</small><b>${esc(o.customer_name)}</b><span class="v">📞 ${esc(o.phone)}</span><br>📍 ${esc(o.address)}${o.city?' - '+esc(o.city):''}</div>
-    <div class="card"><small>تاريخ الفاتورة</small><b style="font-size:14px">${esc(d)}</b><small style="margin-top:6px">رقم الفاتورة</small><b style="font-size:13px;letter-spacing:.5px;direction:ltr;unicode-bidi:isolate">${NO}</b></div></div>
+    <div class="card"><small>تاريخ الفاتورة</small><b style="font-size:15px;line-height:1.7">${esc(d)}</b></div></div>
     <table><thead><tr><th class="i">#</th><th>الصنف</th><th class="n">الكمية</th><th class="n">السعر</th><th class="n">الإجمالي</th></tr></thead><tbody>${its.map((i,k)=>`<tr><td class="i">${k+1}</td><td><div class="pn"><img src="${esc(imgOf(i))}" alt="" crossorigin="anonymous"><span>${esc(i.name)}</span></div></td><td class="n">${+i.qty}</td><td class="n">${+i.price}</td><td class="n">${(+i.qty)*(+i.price)}</td></tr>`).join('')}</tbody></table>
     <div class="low"><div class="qr"><img src="qr.svg" alt="">واتساب<br>القبطان</div><div class="tot"><div><span>إجمالي المنتجات</span><b>${money(sub)}</b></div><div><span>خدمة التوصيل</span><b>${money(fee)}</b></div><div class="g"><span>الإجمالي المطلوب</span><span>${money(+o.total)}</span></div></div></div>
     <div class="pay"><span>طريقة الدفع</span><b>${pay}</b></div>
