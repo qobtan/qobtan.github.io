@@ -186,7 +186,7 @@ document.addEventListener('change', e => {
   }
 })();
 
-const ST = { new: 'جديد', confirmed: 'اتأكد', delivered: 'اتسلّم', canceled: 'ملغي' };
+const ST = { new: 'جديد', confirmed: 'اتأكد', shipping: 'في الطريق', delivered: 'تم التسليم', canceled: 'ملغي' };
 let PIMG = {};
 function imgOf(it) {
   const v = PIMG[it.id];
@@ -217,7 +217,7 @@ async function loadOrders() {
     <small>${esc(fmtD(o.created_at))}</small>
     <div class="ocu"><b>${esc(o.customer_name)}</b><div>📞 ${esc(o.phone)}</div><div>📍 ${esc(o.address)}${o.city ? ' — ' + esc(o.city) : ''}</div></div>
     <div class="oits">${items}</div>
-    <div class="otot"><span>${qty} قطعة — ${esc(o.payment === 'cash' ? 'كاش عند الاستلام' : o.payment === 'vodafone' ? 'فودافون كاش' : o.payment)}</span><b>الإجمالي ${+o.total} ج.م</b></div>${+o.delivery_fee?`<div class="otot"><span>المنتجات ${+o.subtotal} + خدمة توصيل ${+o.delivery_fee} ج.م</span><b>🌹</b></div>`:''}
+    <div class="otot"><span>${qty} قطعة — ${esc(o.payment === 'cash' ? 'كاش عند الاستلام' : o.payment === 'vodafone' ? 'فودافون كاش' : o.payment)}</span><b>الإجمالي ${+o.total} ج.م</b></div>${o.rating?`<div class="otot" style="background:#fffbea;color:#0b2a4a;border:1px solid #f5c945"><span>${esc(o.rating_comment||'')}</span><b style="color:#b8892b;letter-spacing:2px">${'★'.repeat(o.rating)}${'☆'.repeat(5-o.rating)}</b></div>`:''}${+o.delivery_fee?`<div class="otot"><span>المنتجات ${+o.subtotal} + خدمة توصيل ${+o.delivery_fee} ج.م</span><b>🌹</b></div>`:''}
     <div class="oact"><a class="ob call" href="tel:${esc(o.phone)}">اتصال</a></div>
     <label class="lbl">حالة الطلب</label>
     <select class="ost">${Object.keys(ST).map(k => `<option value="${k}" ${k === o.status ? 'selected' : ''}>${ST[k]}</option>`).join('')}</select><div class="msg"></div></div>`;

@@ -25,7 +25,7 @@ const lines = () => PRODUCTS.filter(p => p.price > 0 && cart[p.id] > 0);
 const count = () => lines().reduce((s, p) => s + cart[p.id], 0);
 const total = () => lines().reduce((s, p) => s + cart[p.id] * p.price, 0);
 function change(id, d) { cart[id] = Math.max(0, (cart[id] || 0) + d); store.set('cart', cart); render(true); }
-function badge() { const b = $('#badge'); b.hidden = count() === 0; b.textContent = count(); }
+function badge() { const b = $('#badge'); b.hidden = count() === 0; b.textContent = count(); const ob = $('#obadge'); if (ob) { const n = MYDATA ? MYDATA.length : MYO.length; ob.hidden = n === 0; ob.textContent = n; } }
 function ctl(p) {
   const n = cart[p.id] || 0;
   if (p.price <= 0) return '';
@@ -90,7 +90,57 @@ function detailView(p) {
 function openP(id) { det = id; history.pushState({ d: id }, ''); render(); scrollTo(0, 0); }
 function closeP() { det = null; render(); }
 addEventListener('popstate', () => { if (det !== null) closeP(); });
-function render(keepScroll) { badge(); document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab)); const y = scrollY; if (det !== null && tab === 'shop') detailView(PRODUCTS.find(p => p.id === det)); else tab === 'shop' ? shop() : cartView(); if (keepScroll) scrollTo(0, y); }
+let MYO = store.get('myorders', []);
+let MYDATA = null, MYERR = false;
+const RATE = {};
+async function sendRate(id, btn) {
+  const m = $('#rm-' + id), n = RATE[id], ref = MYO.find(o => o.id === id);
+  if (!n) { m.textContent = 'اختار عدد النجوم الأول'; m.style.color = '#b3261e'; return; }
+  if (!ref) return;
+  btn.disabled = true; btn.textContent = 'بيتبعت...';
+  try {
+    const r = await fetch(SUPA_URL + '/rest/v1/rpc/rate_order', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_id: id, p_token: ref.token, p_rating: n, p_comment: ($('#rc-' + id) || {}).value || '' }) });
+    const ok = await r.json();
+    if (!r.ok) throw new Error('x');
+    MYO = MYO.filter(o => o.id !== id); store.set('myorders', MYO); MYDATA = (MYDATA || []).filter(o => o.id !== id);
+    const card = document.querySelector('[data-rate="' + id + '"]');
+    if (card) card.innerHTML = '<div class="rt" style="text-align:center;font-weight:700;color:#0b2a4a">' + (ok ? 'شكرًا على تقييمك ' + '★'.repeat(n) : 'اتسجّل تقييم الطلب ده قبل كده') + '<br>' + THX + '</div>';
+    setTimeout(() => { if (tab === 'orders') render(true); badge(); }, 2500);
+  } catch (e) { btn.disabled = false; btn.textContent = 'ابعت التقييم'; m.textContent = 'مفيش اتصال. جرّب تاني.'; m.style.color = '#b3261e'; }
+}
+const MYST = { new: 'استلمنا طلبك', confirmed: 'اتأكد طلبك', shipping: 'في الطريق ليك' };
+const MYSTEPS = ['new', 'confirmed', 'shipping'];
+async function loadMyOrders() {
+  if (!MYO.length) { MYDATA = []; MYERR = false; if (tab === 'orders') render(true); badge(); return; }
+  try {
+    const r = await fetch(SUPA_URL + '/rest/v1/rpc/my_orders', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_refs: MYO }) });
+    const d = await r.json();
+    if (!r.ok || !Array.isArray(d)) throw new Error('x');
+    MYDATA = d; MYERR = false;
+    const alive = new Set(d.map(o => o.id));
+    const keep = MYO.filter(o => alive.has(o.id));
+    if (keep.length !== MYO.length) { MYO = keep; store.set('myorders', MYO); }
+  } catch (e) { MYERR = true; }
+  badge(); if (tab === 'orders' && !det) { const y = scrollY; render(true); scrollTo(0, y); }
+}
+const fmtDate = s => { try { return new Date(s).toLocaleString('ar-EG', { weekday: 'short', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } };
+function ordersView() {
+  let h = '<div class="sec"><span>طلباتي</span><em>' + (MYDATA ? MYDATA.length + ' طلب' : '') + '</em></div>';
+  if (MYDATA === null) h += '<div class="empty">بنحمّل طلباتك...</div>';
+  else if (!MYDATA.length) h += '<div class="empty">' + (MYERR ? 'مفيش اتصال دلوقتي. جرّب تاني بعد شوية.' : 'مفيش طلبات شغالة دلوقتي.') + '<br><button class="go" data-tab="shop">ابدأ اطلب</button></div>';
+  else {
+    if (MYERR) h += '<div class="note">مفيش اتصال دلوقتي، الحالة ممكن تكون مش آخر تحديث.</div>';
+    h += MYDATA.map(o => {
+      if (o.status === 'delivered') return '<div class="mo rate" data-rate="' + o.id + '"><div class="mh"><b>طلب #' + o.id + '</b><span class="mst s-delivered">اتسلّم ✓</span></div><div class="rt">وصلك طلبك. قيّم خدمتنا</div><div class="stars" data-for="' + o.id + '">' + [1,2,3,4,5].map(n => '<button type="button" class="star" data-star="' + n + '" data-oid="' + o.id + '" aria-label="' + n + '">★</button>').join('') + '</div><input type="text" class="rc" id="rc-' + o.id + '" maxlength="300" placeholder="تعليق قصير (اختياري)"><div class="rmsg" id="rm-' + o.id + '"></div><div class="rbtns"><button type="button" class="go" data-sendrate="' + o.id + '">ابعت التقييم</button><button type="button" class="go ghost" data-skiprate="' + o.id + '">مش دلوقتي</button></div></div>';
+      const idx = Math.max(0, MYSTEPS.indexOf(o.status));
+      const steps = MYSTEPS.map((k, i) => '<div class="stp' + (i <= idx ? ' on' : '') + '"><i></i><span>' + (k === 'new' ? 'استلمنا' : k === 'confirmed' ? 'اتأكد' : 'في الطريق') + '</span></div>').join('');
+      const its = (o.items || []).map(it => { const p = PRODUCTS.find(x => x.id === it.id); return '<div class="l2">' + (p && p.img ? '<img src="' + p.img + '" alt="">' : '') + '<div class="li"><b>' + esc(it.name) + '</b><span>' + it.qty + ' × ' + money(it.price) + '</span><span class="lt">' + money(it.qty * it.price) + '</span></div></div>'; }).join('');
+      return '<div class="mo"><div class="mh"><b>طلب #' + o.id + '</b><span class="mst s-' + esc(o.status) + '">' + esc(MYST[o.status] || o.status) + '</span></div><div class="md">' + esc(fmtDate(o.created_at)) + '</div><div class="stps">' + steps + '</div><div class="lines">' + its + '</div><div class="sum"><div><span>إجمالي المنتجات</span><b>' + money(+o.subtotal || (+o.total - +o.delivery_fee)) + '</b></div><div><span>خدمة توصيل</span><b>' + money(+o.delivery_fee) + '</b></div><div class="gt"><span>الإجمالي</span><b>' + money(+o.total) + '</b></div></div><div class="md">الدفع: ' + payLabel(o.payment) + '</div></div>';
+    }).join('') + '<div class="thx" style="text-align:center;color:#0b2a4a;font-weight:700;margin:12px 0">' + THX + '</div>';
+  }
+  view.innerHTML = h;
+}
+function render(keepScroll) { badge(); document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab)); const y = scrollY; if (det !== null && tab === 'shop') detailView(PRODUCTS.find(p => p.id === det)); else tab === 'shop' ? shop() : tab === 'orders' ? ordersView() : cartView(); if (keepScroll) scrollTo(0, y); }
 async function placeOrder(btn) {
   if (!ready()) return;
   const L = lines();
@@ -99,11 +149,13 @@ async function placeOrder(btn) {
   try {
     const r = await fetch(SUPA_URL + '/rest/v1/rpc/place_order', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' },
       body: JSON.stringify({ p_name: info.name.trim(), p_phone: info.phone.trim(), p_address: info.address.trim(), p_city: 'الفيوم', p_payment: PAY, p_items: items, p_total: grand() }) });
-    const id = await r.json();
-    if (!r.ok || typeof id !== 'number') throw new Error('x');
+    const res = await r.json();
+    const id = res && res.id;
+    if (!r.ok || typeof id !== 'number' || !res.token) throw new Error('x');
+    MYO = MYO.filter(o => o.id !== id); MYO.unshift({ id: id, token: res.token }); store.set('myorders', MYO); MYDATA = null;
     const wl = waLink(); const gt = grand(); const payP = PAY; try { if (localStorage.getItem('mute') !== '1') { const oa = new Audio('order.mp3'); oa.play().catch(() => {}); } } catch (e) {}
     cart = {}; store.set('cart', cart); badge();
-    view.innerHTML = `<div class="empty"><b style="font-size:20px">✅ الطلب اتبعت</b><br>رقم طلبك #${id}<br>الإجمالي ${money(gt)} (شامل التوصيل)<br>${THX}<br>${payP === 'vodafone' ? (VF ? '<div class="vfnote" style="margin:10px 0">' + vfLine() + '</div>' : '') : 'هنكلمك على رقمك لتأكيد الطلب والتوصيل.'}<br><button class="go" data-tab="shop">رجوع للمنتجات</button></div>`;
+    view.innerHTML = `<div class="empty"><b style="font-size:20px">✅ الطلب اتبعت</b><br>رقم طلبك #${id}<br>الإجمالي ${money(gt)} (شامل التوصيل)<br>${THX}<br>${payP === 'vodafone' ? (VF ? '<div class="vfnote" style="margin:10px 0">' + vfLine() + '</div>' : '') : 'هنكلمك على رقمك لتأكيد الطلب والتوصيل.'}<br><button class="go" data-tab="orders">تابع طلبك</button> <button class="go" data-tab="shop" style="background:#eef2f7;color:#0b2a4a">رجوع للمنتجات</button></div>`;
   } catch (err) {
     btn.disabled = false; btn.textContent = 'ابعت الطلب';
     msg.style.color = '#b3261e'; msg.innerHTML = 'مفيش اتصال أو حصلت مشكلة. جرّب تاني، أو ابعت الطلب على واتساب: <a href="' + waLink() + '" target="_blank" rel="noopener" style="color:#1a9a52;font-weight:700">واتساب</a>';
@@ -118,9 +170,12 @@ document.addEventListener('click', e => {
   if (!t) { const c = e.target.closest('[data-open]'); if (c) openP(+c.dataset.open); return; }
   if (t.dataset.back) { history.back(); }
   else if (t.dataset.share) { const p = PRODUCTS.find(x => x.id === +t.dataset.share); const txt = p.name + (p.price > 0 ? ' - ' + money(p.price) : '') + '\nمنظفات القبطان (توصيل داخل الفيوم)'; if (navigator.share) navigator.share({ title: p.name, text: txt, url: location.origin + location.pathname }).catch(() => {}); else window.open('https://wa.me/?text=' + encodeURIComponent(txt + '\n' + location.origin + location.pathname)); }
+  else if (t.dataset.star) { const id = +t.dataset.oid, n = +t.dataset.star; RATE[id] = n; document.querySelectorAll('.star[data-oid="' + id + '"]').forEach(b => b.classList.toggle('on', +b.dataset.star <= n)); }
+  else if (t.dataset.skiprate) { const id = +t.dataset.skiprate; MYO = MYO.filter(o => o.id !== id); store.set('myorders', MYO); MYDATA = (MYDATA || []).filter(o => o.id !== id); render(true); }
+  else if (t.dataset.sendrate) { sendRate(+t.dataset.sendrate, t); }
   else if (t.dataset.pay) { PAY = t.dataset.pay; store.set('pay', PAY); render(true); }
   else if (t.dataset.copy) { try { navigator.clipboard.writeText(t.dataset.copy); t.textContent = 'اتنسخ ✓'; } catch (e) { t.textContent = t.dataset.copy; } }
-  else if (t.dataset.tab) { det = null; tab = t.dataset.tab; render(); scrollTo(0, 0); }
+  else if (t.dataset.tab) { det = null; tab = t.dataset.tab; render(); scrollTo(0, 0); if (tab === 'orders') loadMyOrders(); }
   else if (t.dataset.add) change(+t.dataset.add, 1);
   else if (t.dataset.inc) change(+t.dataset.inc, 1);
   else if (t.dataset.dec) change(+t.dataset.dec, -1);
@@ -216,3 +271,8 @@ loadFee();
   m.addEventListener('click', () => { muted = !muted; try { localStorage.setItem('mute', muted ? '1' : '0'); } catch (e) {} paint(); if (!muted) play('tick'); });
   document.body.appendChild(m);
 })();
+
+/* myOrdersRefresh */
+loadMyOrders();
+setInterval(() => { if (!document.hidden) loadMyOrders(); }, 45000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) loadMyOrders(); });
