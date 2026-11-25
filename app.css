@@ -155,3 +155,19 @@ main>.back,.back{color:#f6d77b}
 #view>.grid,main .grid{margin-top:8px}
 main{padding-top:18px}
 .grid{gap:16px}
+
+/* ===== large readable v51 ===== */
+.grid{grid-template-columns:1fr !important;gap:20px}
+@media(min-width:700px){.grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important}}
+.card{padding:14px;gap:10px;border-radius:24px}
+.pw img,.pw .ph{aspect-ratio:1/0.85;border-radius:18px}
+.tag{font-size:15px;padding:5px 12px;font-weight:700;color:#f6d77b}
+.t{font-size:21px !important;font-weight:800;line-height:1.5;min-height:0;color:#0b2a4a}
+.more{font-size:17px !important;font-weight:800;color:#8a5f00;margin:2px 0 6px}
+.pr{font-size:17px;color:#0b2a4a;font-weight:700}.pr b{font-size:30px !important;font-weight:900;color:#0b2a4a}
+.soon{font-size:17px;color:#4a5a6e}
+.add{font-size:19px !important;padding:15px !important;font-weight:800}
+.step{padding:6px}.step button{width:50px;height:50px;font-size:26px}.step span,.step b{font-size:22px}
+.search input{font-size:18px;padding:16px 20px}
+.tabs button{font-size:17px;padding:14px 6px}
+.bar{font-size:15px}.bar b{font-size:24px}.go{font-size:18px;padding:14px 24px}
