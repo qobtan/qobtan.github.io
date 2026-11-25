@@ -39,7 +39,7 @@ function ctl(p) {
 }
 function cardHtml(p) {
   return `<div class="card${(cart[p.id] || 0) > 0 ? ' in' : ''}" data-open="${p.id}"><div class="pw">${p.img ? `<img src="${p.img}" alt="${esc(p.name)}">` : '<div class="ph"></div>'}</div>
-  <div class="t">${esc(p.name)}</div>${p.detail && p.price > 0 ? `<div class="sz">${esc(p.detail)}</div>` : ''}<div class="more">التفاصيل ‹</div><div class="pr">${p.price > 0 ? `<b>${p.price}</b> ج.م` : '<span class="soon">السعر قريبًا</span>'}</div>${ctl(p)}</div>`;
+  <div class="t">${esc(p.name)}</div>${(()=>{const l=p.desc?String(p.desc.intro||'').split('\n').map(s=>s.trim()).filter(Boolean)[0]||'':'';return l?`<div class="ds">${esc(l.replace(/^[✓•]\s*/,''))}</div>`:''})()}${p.detail && p.price > 0 ? `<div class="sz">${esc(p.detail)}</div>` : ''}<div class="more">التفاصيل ‹</div><div class="pr">${p.price > 0 ? `<b>${p.price}</b> ج.م` : '<span class="soon">السعر قريبًا</span>'}</div>${ctl(p)}</div>`;
 }
 function shop() {
   view.innerHTML = `<div class="search"><input type="search" id="q" placeholder="دوّر على منتج..." value="${esc(q)}"></div>

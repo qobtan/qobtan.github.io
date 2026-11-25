@@ -275,3 +275,19 @@ main>.back,.back{color:#8a5f0a !important;font-weight:700}
 .dimg{background:#fff !important;border:1px solid #e3e7ee !important;border-radius:14px !important;box-shadow:0 2px 8px rgba(11,42,74,.08) !important;overflow:hidden !important}
 .dimg img,.dimg .ph{border:0 !important;border-radius:0 !important}
 .grid{gap:12px !important}
+
+/* v72: catalog look, flat */
+.card,.card.in{background:transparent !important;border:0 !important;box-shadow:none !important;border-radius:0 !important;overflow:visible !important;padding:0 0 12px !important;gap:3px !important}
+.card .pw{border-radius:16px !important;overflow:hidden !important;margin:0 0 4px !important}
+.card .pw img,.card .pw .ph{border-radius:16px !important;width:100% !important;display:block}
+.card .t,.card .more,.card .pr,.card .sz,.card .soon,.card .ds{margin-left:2px !important;margin-right:2px !important}
+.card .t{font-weight:800 !important;font-size:14px !important;line-height:1.35 !important;color:#0b2a4a !important}
+.card .ds{font-size:12px;color:#8a929c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
+.card .sz{font-size:12px !important;color:#6b7480 !important}
+.card .more{display:none !important}
+.card .pr{font-size:13px !important;color:#8a929c !important}
+.card .pr b{font-size:15px !important;color:#0b2a4a !important}
+.card .step,.card .add{width:auto !important;align-self:flex-start;margin:4px 2px 0 !important;height:30px !important;min-height:0 !important;padding:0 14px !important;font-size:12px !important;border-radius:15px !important}
+.card .step{padding:0 !important}
+.card .step button{width:30px !important;height:30px !important}
+.grid{gap:10px 14px !important}
