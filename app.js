@@ -229,7 +229,7 @@ loadFee();
 /* bgm */
 let BG = null;
 function bgmMuted() { try { return localStorage.getItem('mute') === '1'; } catch (e) { return false; } }
-const BGM_ON = false;
+const BGM_ON = true;
 function startBgm() {
   if (!BGM_ON) return;
   try {
