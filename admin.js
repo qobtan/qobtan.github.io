@@ -187,16 +187,39 @@ document.addEventListener('change', e => {
 })();
 
 const ST = { new: 'جديد', confirmed: 'اتأكد', delivered: 'اتسلّم', canceled: 'ملغي' };
+let PIMG = {};
+function imgOf(it) {
+  const v = PIMG[it.id];
+  if (!v) return 'logo.jpg';
+  return v;
+}
+function waCust(phone, o) {
+  let n = String(phone).replace(/\D/g, '');
+  if (n.startsWith('00')) n = n.slice(2);
+  if (n.startsWith('0')) n = '20' + n.slice(1);
+  const txt = 'أهلاً ' + o.customer_name + '، معاك منظفات القبطان بخصوص طلبك رقم ' + o.id + '.';
+  return 'https://wa.me/' + n + '?text=' + encodeURIComponent(txt);
+}
 async function loadOrders() {
   const box = $('#orders'); box.innerHTML = '<div class="hint2">بيحمّل...</div>';
   const r = await rpc('admin_list_orders', { p_pin: PIN }).catch(() => null);
   if (!r || !r.ok || !Array.isArray(r.data)) { box.innerHTML = '<div class="msg err">مشكلة في تحميل الطلبات</div>'; return; }
   if (!r.data.length) { box.innerHTML = '<div class="hint2">مفيش طلبات لسه.</div>'; return; }
-  box.innerHTML = r.data.map(o => {
-    const items = (o.items || []).map(i => esc(i.qty + ' × ' + i.name)).join('<br>');
-    const d = new Date(o.created_at).toLocaleString('ar-EG');
-    return `<div class="ord ${o.status === 'new' ? 'new' : ''}" data-oid="${o.id}"><b>طلب #${o.id}</b> — ${esc(ST[o.status] || o.status)}<br><small>${esc(d)}</small><br>
-    <b>${esc(o.customer_name)}</b> — <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a><br>${esc(o.address)}<br>${items}<br><b>الإجمالي: ${+o.total} ج.م</b> (كاش عند الاستلام)
+  PIMG = {}; (rows || []).forEach(p => { PIMG[p.id] = p.img; });
+  if (!rows.length) { try { const pr = await api('/rest/v1/products?select=id,img'); (await pr.json()).forEach(p => { PIMG[p.id] = p.img; }); } catch (e) {} }
+  const fmtD = s => { const d = new Date(s); return d.toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' }) + ' — ' + d.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit' }); };
+  const counts = { new: 0 }; r.data.forEach(o => { if (o.status === 'new') counts.new++; });
+  box.innerHTML = `<div class="hint2" style="margin-top:8px">${r.data.length} طلب — ${counts.new} جديد</div>` + r.data.map(o => {
+    const items = (o.items || []).map(i => `<div class="oit"><img src="${esc(imgOf(i))}" alt=""><div class="oib"><b>${esc(i.name)}</b><span>${+i.qty} × ${+i.price} ج.م</span></div><div class="oil">${(+i.qty) * (+i.price)} ج.م</div></div>`).join('');
+    const qty = (o.items || []).reduce((s, i) => s + (+i.qty || 0), 0);
+    return `<div class="ord ${o.status === 'new' ? 'new' : ''}" data-oid="${o.id}">
+    <div class="ohd"><b>طلب #${o.id}</b><span class="bd s-${esc(o.status)}">${esc(ST[o.status] || o.status)}</span></div>
+    <small>${esc(fmtD(o.created_at))}</small>
+    <div class="ocu"><b>${esc(o.customer_name)}</b><div>📞 ${esc(o.phone)}</div><div>📍 ${esc(o.address)}${o.city ? ' — ' + esc(o.city) : ''}</div></div>
+    <div class="oits">${items}</div>
+    <div class="otot"><span>${qty} قطعة — ${esc(o.payment === 'cash' ? 'كاش عند الاستلام' : o.payment)}</span><b>الإجمالي ${+o.total} ج.م</b></div>
+    <div class="oact"><a class="ob call" href="tel:${esc(o.phone)}">اتصال</a></div>
+    <label class="lbl">حالة الطلب</label>
     <select class="ost">${Object.keys(ST).map(k => `<option value="${k}" ${k === o.status ? 'selected' : ''}>${ST[k]}</option>`).join('')}</select><div class="msg"></div></div>`;
   }).join('');
 }
@@ -204,7 +227,7 @@ document.addEventListener('change', async e => {
   if (!e.target.classList || !e.target.classList.contains('ost')) return;
   const el = e.target.closest('.ord'); const msg = el.querySelector('.msg');
   const r = await rpc('admin_set_order_status', { p_pin: PIN, p_id: +el.dataset.oid, p_status: e.target.value }).catch(() => null);
-  if (r && r.ok && r.data === true) { msg.className = 'msg ok'; msg.textContent = 'اتحدّث'; el.classList.toggle('new', e.target.value === 'new'); }
+  if (r && r.ok && r.data === true) { msg.className = 'msg ok'; msg.textContent = 'اتحدّث'; el.classList.toggle('new', e.target.value === 'new'); const bd = el.querySelector('.bd'); bd.textContent = ST[e.target.value]; bd.className = 'bd s-' + e.target.value; }
   else { msg.className = 'msg err'; msg.textContent = 'فشل التحديث'; }
 });
 $('#reloadord').addEventListener('click', loadOrders);
