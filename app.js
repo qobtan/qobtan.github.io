@@ -10,6 +10,7 @@ const store = {
 };
 let cart = store.get('cart', {});
 let info = store.get('info', { name: '', phone: '', address: '' });
+let CAT = 'الكل';
 let tab = /tab=orders/.test(location.search) ? 'orders' : 'shop', q = '', det = null;
 const money = n => n + ' ج.م';
 let FEE = store.get('fee', 25);
@@ -43,12 +44,13 @@ function cardHtml(p) {
 }
 function shop() {
   view.innerHTML = `<div class="search"><input type="search" id="q" placeholder="دوّر على منتج..." value="${esc(q)}"></div>
-  <div class="sec"><span>منتجاتنا</span><em id="cnt"></em></div><div class="grid" id="grid"></div><div id="empty"></div>${count() ? `<div class="bar"><div><span>${count()} قطعة</span><b>${money(total())}</b></div><button class="go" data-tab="cart">كمّل الطلب</button></div>` : ''}`;
+  <div class="cats" id="cats">${['منظفات', 'عطور', 'الكل'].map(c => `<button type="button" class="cat${CAT === c ? ' on' : ''}" data-cat="${c}">${c === 'منظفات' ? '🧴 ' : c === 'عطور' ? '🌸 ' : ''}${c}</button>`).join('')}</div><div class="sec"><span>منتجاتنا</span><em id="cnt"></em></div><div class="grid" id="grid"></div><div id="empty"></div>${count() ? `<div class="bar"><div><span>${count()} قطعة</span><b>${money(total())}</b></div><button class="go" data-tab="cart">كمّل الطلب</button></div>` : ''}`;
   shopGrid();
   $('#q').addEventListener('input', e => { q = e.target.value; shopGrid(); });
+  $('#cats').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (!b) return; CAT = b.dataset.cat; document.querySelectorAll('#cats .cat').forEach(x => x.classList.toggle('on', x.dataset.cat === CAT)); shopGrid(); });
 }
 function shopGrid() {
-  const list = PRODUCTS.filter(p => !q.trim() || p.name.includes(q.trim()));
+  const list = PRODUCTS.filter(p => (CAT === 'الكل' || (p.cat || 'منظفات') === CAT) && (!q.trim() || p.name.includes(q.trim())));
   $('#grid').innerHTML = list.map(cardHtml).join('');
   $('#cnt').textContent = list.length + ' منتج';
   $('#empty').innerHTML = list.length ? '' : '<div class="empty">مفيش منتج بالاسم ده</div>';
@@ -238,7 +240,7 @@ async function liveProducts() {
     if (!r.ok) return;
     const rows = await r.json();
     if (!Array.isArray(rows) || !rows.length) return;
-    PRODUCTS = rows.map(x => ({ id: x.id, name: x.name, detail: x.detail || '', price: +x.price || 0, img: x.img || '', desc: (x.intro || (Array.isArray(x.pts) && x.pts.length)) ? { intro: x.intro || '', pts: Array.isArray(x.pts) ? x.pts : [] } : null }));
+    PRODUCTS = rows.map(x => ({ id: x.id, name: x.name, detail: x.detail || '', price: +x.price || 0, img: x.img || '', cat: x.cat || 'منظفات', desc: (x.intro || (Array.isArray(x.pts) && x.pts.length)) ? { intro: x.intro || '', pts: Array.isArray(x.pts) ? x.pts : [] } : null }));
     store.set('liveProducts', PRODUCTS);
     render(true);
   } catch (e) {}

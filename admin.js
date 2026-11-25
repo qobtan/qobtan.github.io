@@ -226,6 +226,8 @@ function card(p) {
   <input type="text" class="f-name" value="${esc(p.name)}">
   <label class="lbl">السعر (ج.م)</label>
   <input type="number" class="f-price" min="0" step="1" value="${+p.price || 0}">
+  <label class="lbl">القسم</label>
+  <select class="f-cat"><option value="منظفات"${(p.cat || 'منظفات') === 'منظفات' ? ' selected' : ''}>🧴 منظفات</option><option value="عطور"${p.cat === 'عطور' ? ' selected' : ''}>🌸 عطور</option></select>
   <label class="lbl">تفاصيل قصيرة (مثال: 4 لتر) — اختياري</label>
   <input type="text" class="f-detail" value="${esc(p.detail || '')}">
   <label class="lbl">المخزون (عدد القطع الموجودة) — بيظهرلك إنت بس</label>
@@ -261,11 +263,13 @@ async function saveCard(el) {
   };
   if (!body.p_name) { msg.className = 'msg err'; msg.textContent = 'الاسم مطلوب'; return; }
   msg.className = 'msg'; msg.textContent = 'بيحفظ...';
+  const catv = el.querySelector('.f-cat') ? el.querySelector('.f-cat').value : 'منظفات';
   const r = await rpc('admin_update_product', Object.assign({ p_pin: PIN, p_id: id }, body)).catch(() => null);
+  const rc = await rpc('admin_set_cat', { p_pin: PIN, p_id: id, p_cat: catv }).catch(() => null);
   const changed = r && r.ok && Array.isArray(r.data) ? r.data.length : 0;
   if (changed > 0) {
     const row = rows.find(x => x.id === id);
-    if (row) Object.assign(row, { name: body.p_name, price: body.p_price, detail: body.p_detail, intro: body.p_intro, pts: [] });
+    if (row) Object.assign(row, { cat: catv, name: body.p_name, price: body.p_price, detail: body.p_detail, intro: body.p_intro, pts: [] });
     msg.className = 'msg ok'; msg.textContent = 'اتحفظ — ظهر في المتجر فورًا';
   } else { msg.className = 'msg err'; msg.textContent = 'فشل الحفظ — اتأكد من الرقم السري'; }
 }
