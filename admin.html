@@ -108,6 +108,7 @@ body{background:#f4f6f9}
 .pcard select{width:100%;border:1px solid #d8dee7;border-radius:10px;padding:10px;font-size:15px;font-family:inherit;margin-top:4px;background:#fff}
 .stp{display:flex;align-items:center;gap:8px}.stp button{width:34px;height:34px;border-radius:10px;border:0;background:#0b2a4a;color:#f5c945;font-size:20px;font-weight:700;cursor:pointer}.stp b{min-width:22px;text-align:center;font-size:16px}
 .mo-r.sel{background:#fffbea;border-radius:10px}.mo-sum{background:#0b2a4a;color:#f5c945;border-radius:12px;padding:10px;margin-top:12px;font-size:13px;line-height:1.8;text-align:center}.mo-sum b{font-size:18px}
+.mbtn{border:0;border-radius:10px;padding:8px 12px;margin-inline-start:6px;background:#0b2a4a;color:#f6d77b;font:inherit;font-weight:700;font-size:13px;cursor:pointer}.crow .cn{flex:1}
 </style>
 </head>
 <body>
@@ -144,11 +145,13 @@ body{background:#f4f6f9}
     <div class="tabsec" id="sec-more">
       <div class="stitle">☰ المزيد</div>
       <button class="mlink" type="button" data-go="customers"><span>👥</span><b>العملاء<small>مين بيشتري منك وكام مرة</small></b><i>‹</i></button>
+      <button class="mlink" type="button" data-go="reviews"><span>⭐</span><b>آراء العملاء<small>اعتمد أو أخفي تقييمات، وضيف رأي وصلك</small></b><i>‹</i></button>
       <button class="mlink" type="button" data-go="referrals"><span>🎁</span><b>دعوات الأصدقاء<small>مين دعا مين والخصومات المطبقة</small></b><i>‹</i></button>
       <button class="mlink" type="button" data-go="expenses"><span>💸</span><b>المصروفات<small>إيجار، مرتبات، توصيل... وبتتخصم من المكسب</small></b><i>‹</i></button>
       <button class="mlink" type="button" data-go="settings"><span>⚙️</span><b>الإعدادات<small>خدمة التوصيل والرقم السري</small></b><i>‹</i></button>
     </div>
     <div class="tabsec" id="sec-customers"><button class="backbar" type="button" data-go="more">‹ المزيد</button><div class="stitle">👥 العملاء</div><div id="custbox"></div></div>
+    <div class="tabsec" id="sec-reviews"><button class="backbar" type="button" data-go="more">‹ المزيد</button><div class="stitle">⭐ آراء العملاء</div><div id="revbox"></div></div>
     <div class="tabsec" id="sec-referrals"><button class="backbar" type="button" data-go="more">‹ المزيد</button><div class="stitle">🎁 دعوات الأصدقاء</div><div id="refbox"></div></div>
     <div class="tabsec" id="sec-expenses"><button class="backbar" type="button" data-go="more">‹ المزيد</button><div class="stitle">💸 المصروفات</div><div id="expbox"></div></div>
     <div class="tabsec" id="sec-settings">
@@ -193,6 +196,6 @@ body{background:#f4f6f9}
   <button data-sec="materials" type="button"><span>📦</span>الخامات</button>
   <button data-sec="more" type="button"><span>☰</span>المزيد</button>
 </nav>
-<script src="admin.js?v=54"></script>
+<script src="admin.js?v=55"></script>
 </body>
 </html>

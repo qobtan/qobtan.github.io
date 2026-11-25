@@ -43,7 +43,7 @@ function cardHtml(p) {
 }
 function shop() {
   view.innerHTML = `<div class="search"><input type="search" id="q" placeholder="دوّر على منتج..." value="${esc(q)}"></div>
-  <div class="sec"><span>منتجاتنا</span><em id="cnt"></em></div><div class="grid" id="grid"></div><div id="empty"></div>${count() ? `<div class="bar"><div><span>${count()} قطعة</span><b>${money(total())}</b></div><button class="go" data-tab="cart">كمّل الطلب</button></div>` : ''}`;
+  <div class="sec"><span>منتجاتنا</span><em id="cnt"></em></div><div class="grid" id="grid"></div><div id="empty"></div><div id="revs"></div>${count() ? `<div class="bar"><div><span>${count()} قطعة</span><b>${money(total())}</b></div><button class="go" data-tab="cart">كمّل الطلب</button></div>` : ''}`;
   shopGrid();
   $('#q').addEventListener('input', e => { q = e.target.value; shopGrid(); });
 }
@@ -186,7 +186,7 @@ function ordersView() {
   }
   view.innerHTML = h;
 }
-function render(keepScroll) { badge(); document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab)); const y = scrollY; if (det !== null && tab === 'shop') detailView(PRODUCTS.find(p => p.id === det)); else tab === 'shop' ? shop() : tab === 'orders' ? ordersView() : tab === 'invite' ? inviteView() : (cartView(), loadCredit()); if (keepScroll) scrollTo(0, y); }
+function render(keepScroll) { badge(); document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab)); const y = scrollY; if (det !== null && tab === 'shop') detailView(PRODUCTS.find(p => p.id === det)); else tab === 'shop' ? (shop(), showRevs()) : tab === 'orders' ? ordersView() : tab === 'invite' ? inviteView() : (cartView(), loadCredit()); if (keepScroll) scrollTo(0, y); }
 async function placeOrder(btn) {
   if (!ready()) return;
   const L = lines();
@@ -371,3 +371,18 @@ document.addEventListener('click', e => {
   else if (b.id === 'inv-save') { const v = ($('#inv-code').value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, ''); store.set('refcode', v); $('#inv-msg').textContent = v ? 'اتسجل الكود ✓ هيتحسب لصاحبك مع أول طلب ليك.' : 'اتمسح الكود.'; }
 });
 document.addEventListener('change', e => { if (e.target.id === 'f-phone') { info.phone = e.target.value; store.set('info', info); CREDPH = ''; loadCredit(); } });
+
+/* ===== آراء عملائنا ===== */
+let REVS = store.get('revs', null);
+const starsH = n => '<span class="rv-st">' + '★'.repeat(n) + '<i>' + '★'.repeat(5 - n) + '</i></span>';
+function revHtml() {
+  if (!REVS || !REVS.count) return '';
+  const dt = x => { try { return new Date(x).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' }); } catch (e) { return ''; } };
+  return '<div class="rv"><div class="rv-h"><h3>آراء عملائنا</h3><div class="rv-a"><b>' + REVS.avg + '</b> ' + starsH(Math.round(REVS.avg)) + '<small>من ' + REVS.count + ' تقييم</small></div></div><div class="rv-l">'
+    + REVS.items.map(r => '<div class="rv-c">' + starsH(r.rating) + (r.comment ? '<p>' + esc(r.comment) + '</p>' : '') + '<small>' + esc(r.name) + ' · ' + dt(r.created_at) + '</small></div>').join('') + '</div></div>';
+}
+function showRevs() {
+  const el = $('#revs'); if (el) el.innerHTML = revHtml();
+  if (showRevs.busy) return; showRevs.busy = true;
+  rp('get_reviews', {}).then(r => { showRevs.busy = false; if (r && typeof r.count === 'number') { const old = JSON.stringify(REVS); REVS = r; store.set('revs', r); if (JSON.stringify(r) !== old) { const e2 = $('#revs'); if (e2 && tab === 'shop' && det === null) e2.innerHTML = revHtml(); } } });
+}

@@ -174,3 +174,11 @@ main{padding-top:18px}
 .invc small{color:#4a5a6e;font-size:14px}.invc b{font-size:28px;letter-spacing:3px;color:#0b2a4a;font-family:Georgia,serif}
 .invs{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:14px 0}
 .invs div{background:#f6f8fb;border:1px solid #e3cd88;border-radius:16px;padding:12px;text-align:center}.invs b{display:block;font-size:26px;color:#0b2a4a}.invs span{font-size:13px;color:#4a5a6e}
+
+/* ===== reviews v55 ===== */
+.rv{margin:26px 0 90px}.rv-h{text-align:center;margin-bottom:12px}.rv-h h3{margin:0 0 6px;font-size:22px;color:#f6d77b}
+.rv-a{color:#fff;font-size:15px}.rv-a b{font-size:26px;color:#f6d77b;margin-inline-end:6px}.rv-a small{display:block;color:#cdd9ea;margin-top:2px}
+.rv-st{color:#f5c945;letter-spacing:2px;font-size:17px}.rv-st i{font-style:normal;color:#8ea3c2}
+.rv-l{display:flex;flex-direction:column;gap:10px}
+.rv-c{background:#f6f8fb;border:1.5px solid #d9a93a;border-radius:18px;padding:13px 15px}
+.rv-c p{margin:7px 0;color:#14202e;font-size:15.5px;line-height:1.8;font-weight:600}.rv-c small{color:#4a5a6e;font-size:13px}

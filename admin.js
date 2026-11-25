@@ -25,14 +25,14 @@ async function checkPin(p) {
 
 
 function showSec(s) {
-  if (!['orders', 'products', 'profit', 'materials', 'more', 'customers', 'expenses', 'referrals', 'settings'].includes(s)) s = 'orders';
+  if (!['orders', 'products', 'profit', 'materials', 'more', 'customers', 'expenses', 'referrals', 'reviews', 'settings'].includes(s)) s = 'orders';
   document.querySelectorAll('.tabsec').forEach(e => e.classList.toggle('on', e.id === 'sec-' + s));
-  document.querySelectorAll('#bnav button').forEach(b => b.classList.toggle('on', b.dataset.sec === (['customers', 'expenses', 'referrals', 'settings'].includes(s) ? 'more' : s)));
+  document.querySelectorAll('#bnav button').forEach(b => b.classList.toggle('on', b.dataset.sec === (['customers', 'expenses', 'referrals', 'reviews', 'settings'].includes(s) ? 'more' : s)));
   try { localStorage.setItem('admsec', s); } catch (e) {}
   window.scrollTo(0, 0);
 }
 document.querySelectorAll('#bnav button').forEach(b => b.addEventListener('click', () => { showSec(b.dataset.sec); if (b.dataset.sec === 'orders') loadOrders(); if (b.dataset.sec === 'profit') loadProfit(); if (b.dataset.sec === 'materials') setMS(($('#recbox') && !$('#recbox').hidden) ? 'rec' : 'mat'); if (b.dataset.sec === 'products') loadStock(); }));
-document.addEventListener('click', e => { const g = e.target.closest && e.target.closest('[data-go]'); if (g) { showSec(g.dataset.go); if (g.dataset.go === 'customers') loadCustomers(); if (g.dataset.go === 'expenses') loadExp(); if (g.dataset.go === 'referrals') loadRef(); } });
+document.addEventListener('click', e => { const g = e.target.closest && e.target.closest('[data-go]'); if (g) { showSec(g.dataset.go); if (g.dataset.go === 'customers') loadCustomers(); if (g.dataset.go === 'expenses') loadExp(); if (g.dataset.go === 'referrals') loadRef(); if (g.dataset.go === 'reviews') loadRev(); } });
 function enterPanel() { $('#bnav').hidden = false; const s0 = (new URLSearchParams(location.search).get('tab')) || 'orders'; showSec(s0); if (s0 === 'profit') loadProfit(); if (s0 === 'materials') loadMats(); loadStock(); }
 
 // ===== الأرباح =====
@@ -670,3 +670,31 @@ async function loadRef() {
   <div class="hint2" style="margin:0 4px 8px">الخصم = نص سعر التوصيل على الطلب الجاي لصاحب الكود، بعد ما أول طلب لصديقه يتسلم. بيتطبق تلقائي.</div>
   <div class="pcard">${L.length ? L.map(x => `<div class="crow"><div class="cn">${esc(x.referrer_name || 'عميل')} <small>${esc(x.referrer)}</small> دعا ${esc(x.referee_name || 'صديق')} <small>${esc(x.referee)} · كود ${esc(x.code)} · طلب #${x.order_id} (${ST[x.order_status] || esc(x.order_status || '')})</small><small>${x.used_order ? '✅ الخصم اتطبق على طلب #' + x.used_order : (x.order_status === 'delivered' ? '🎁 الخصم متاح للطلب الجاي' : '⏳ مستني تسليم طلب الصديق')}</small></div></div>`).join('') : '<div class="hint2">لسه مفيش دعوات.</div>'}</div>`;
 }
+
+/* ===== آراء العملاء ===== */
+let REVSTAR = 5;
+const stH = n => '<span style="color:#d9a93a">' + '★'.repeat(n) + '</span><span style="color:#c5cfdc">' + '★'.repeat(5 - n) + '</span>';
+async function loadRev() {
+  const box = $('#revbox'); if (!$('#rv-name')) box.innerHTML = '<div class="hint2">بيحمّل...</div>';
+  const r = await rpc('admin_reviews_list', { p_pin: PIN }).catch(() => null);
+  if (!r || !r.ok || !r.data || !Array.isArray(r.data.reviews)) { box.innerHTML = '<div class="msg err">مشكلة في التحميل — جرّب تاني</div>'; return; }
+  const R = r.data.reviews, P = r.data.pending, shown = R.filter(x => x.status === 'approved').length;
+  box.innerHTML = `<div class="hint2" style="margin:0 4px 8px">اللي بيظهر للعملاء بس الآراء المعتمدة (${shown}). تقييمات العملاء من التطبيق مش بتظهر لحد ما تعتمدها. بيظهر الاسم الأول بس.</div>
+  <details class="pcard matform"><summary>+ ضيف رأي وصلك (واتساب مثلًا)</summary>
+    <label class="lbl">اسم العميل</label><input type="text" id="rv-name" placeholder="مثال: أم محمد">
+    <label class="lbl">التقييم</label><div class="ochips" id="rv-st">${[5, 4, 3, 2, 1].map(n => `<button type="button" class="ochip ${REVSTAR === n ? 'on' : ''}" data-rvs="${n}">${n} ★</button>`).join('')}</div>
+    <label class="lbl">كلام العميل زي ما قاله</label><input type="text" id="rv-text" placeholder="الرأي الحقيقي">
+    <button class="abtn" type="button" id="rv-add">إضافة ونشر</button><div class="msg" id="rv-msg"></div></details>
+  <div class="stitle" style="font-size:16px">تقييمات من التطبيق مستنية قرارك (${P.length})</div>
+  <div class="pcard">${P.length ? P.map(x => `<div class="crow"><div class="cn">${stH(x.rating)} · ${esc(x.name || 'عميل')} <small>طلب #${x.order_id}${x.comment ? ' · ' + esc(x.comment) : ' · من غير تعليق'}</small></div><button type="button" class="mbtn" data-rvo="${x.order_id}" data-rvst="approved">نشر</button><button type="button" class="mbtn" data-rvo="${x.order_id}" data-rvst="hidden">إخفاء</button></div>`).join('') : '<div class="hint2">مفيش تقييمات جديدة.</div>'}</div>
+  <div class="stitle" style="font-size:16px">الآراء اللي اتحفظت</div>
+  <div class="pcard">${R.length ? R.map(x => `<div class="crow"><div class="cn">${stH(x.rating)} · ${esc(x.name)} <small>${x.source === 'manual' ? 'مضاف يدويًا' : 'من التطبيق'} · ${x.status === 'approved' ? '✅ ظاهر للعملاء' : '🚫 مخفي'}${x.comment ? ' · ' + esc(x.comment) : ''}</small></div><button type="button" class="mbtn" data-rvid="${x.id}" data-rvst="${x.status === 'approved' ? 'hidden' : 'approved'}">${x.status === 'approved' ? 'إخفاء' : 'إظهار'}</button>${x.source === 'manual' ? `<button type="button" class="mbtn" data-rvdel="${x.id}">مسح</button>` : ''}</div>`).join('') : '<div class="hint2">لسه مفيش آراء.</div>'}</div>`;
+}
+document.addEventListener('click', async e => {
+  const t = e.target.closest && e.target.closest('button'); if (!t) return;
+  if (t.dataset.rvs) { REVSTAR = +t.dataset.rvs; document.querySelectorAll('[data-rvs]').forEach(b => b.classList.toggle('on', +b.dataset.rvs === REVSTAR)); return; }
+  if (t.id === 'rv-add') { const m = $('#rv-msg'); const name = $('#rv-name').value.trim(), txt = $('#rv-text').value.trim(); if (!name) { m.className = 'msg err'; m.textContent = 'اكتب اسم العميل'; return; } const r = await rpc('admin_review_add', { p_pin: PIN, p_name: name, p_rating: REVSTAR, p_comment: txt }).catch(() => null); if (r && r.ok && r.data === true) loadRev(); else { m.className = 'msg err'; m.textContent = 'فشل الحفظ — جرّب تاني'; } return; }
+  if (t.dataset.rvo) { const r = await rpc('admin_review_from_order', { p_pin: PIN, p_order_id: +t.dataset.rvo, p_status: t.dataset.rvst }).catch(() => null); if (r && r.ok) loadRev(); return; }
+  if (t.dataset.rvid) { const r = await rpc('admin_review_status', { p_pin: PIN, p_id: +t.dataset.rvid, p_status: t.dataset.rvst }).catch(() => null); if (r && r.ok) loadRev(); return; }
+  if (t.dataset.rvdel) { if (!confirm('تمسح الرأي ده؟')) return; const r = await rpc('admin_review_del', { p_pin: PIN, p_id: +t.dataset.rvdel }).catch(() => null); if (r && r.ok) loadRev(); }
+});
