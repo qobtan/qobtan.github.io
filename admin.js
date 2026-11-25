@@ -26,7 +26,7 @@ async function checkPin(p) {
 
 function showSec(s) {
   if (!['orders', 'products', 'settings'].includes(s)) s = 'orders';
-  document.querySelectorAll('.sec').forEach(e => e.classList.toggle('on', e.id === 'sec-' + s));
+  document.querySelectorAll('.tabsec').forEach(e => e.classList.toggle('on', e.id === 'sec-' + s));
   document.querySelectorAll('#bnav button').forEach(b => b.classList.toggle('on', b.dataset.sec === s));
   try { localStorage.setItem('admsec', s); } catch (e) {}
   window.scrollTo(0, 0);
@@ -203,7 +203,7 @@ document.addEventListener('change', e => {
   let st = 'net';
   if (PIN) { try { const rr = await checkPin(PIN); st = rr ? 'ok' : 'bad'; } catch (e) { st = 'net'; } }
   if (PIN && st === 'net') st = 'ok';
-  if (!(PIN && st === 'ok')) { try { $('#pinmsg').textContent = 'v39 | app:' + (window.AndroidFCM && AndroidFCM.getPin ? 'v3' : 'old/none') + ' | saved:' + (PIN ? 'yes' : 'no') + ' | check:' + st; } catch (e) {} }
+  if (!(PIN && st === 'ok')) { try { $('#pinmsg').textContent = 'v41 | app:' + (window.AndroidFCM && AndroidFCM.getPin ? 'v3' : 'old/none') + ' | saved:' + (PIN ? 'yes' : 'no') + ' | check:' + st; } catch (e) {} }
   if (PIN && st === 'ok') {
     $('#pinbox').hidden = true; $('#panel').hidden = false; enterPanel(); load(); loadOrders(); adminFcm(); setTimeout(adminFcm, 4000);
   }
