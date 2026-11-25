@@ -1,20 +1,37 @@
 <!doctype html>
 <html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
 <title>فاتورة - منظفات القبطان</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box}body{margin:0;background:#eef1f6;font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;color:#0b2a4a}
+*{box-sizing:border-box}body{margin:0;background:#e9edf3;font-family:Cairo,system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;color:#0b2a4a;-webkit-font-smoothing:antialiased}
 .wrap{max-width:560px;margin:0 auto;padding:12px}
-.inv{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 10px rgba(11,42,74,.12)}
-.hd{background:linear-gradient(135deg,#0b2a4a,#123a63);color:#f5c945;text-align:center;padding:18px 12px;border-bottom:3px solid #f5c945}
-.hd img{width:64px;height:64px;border-radius:50%;border:2px solid #f5c945;object-fit:cover}.hd h1{margin:8px 0 2px;font-size:22px}.hd p{margin:0;font-size:13px;color:#dbe4f0}
-.bd{padding:16px}.meta{display:flex;justify-content:space-between;gap:8px;font-size:14px;margin-bottom:10px}.meta b{font-size:18px}
-.box{background:#f6f8fb;border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.8;margin-bottom:12px}
-table{width:100%;border-collapse:collapse;font-size:14px}th{background:#0b2a4a;color:#f5c945;padding:8px;text-align:right;font-size:13px}td{padding:9px 8px;border-bottom:1px solid #eef1f6}td.n,th.n{text-align:center;white-space:nowrap}
-.tot{margin-top:12px;font-size:15px}.tot div{display:flex;justify-content:space-between;padding:5px 0}.tot .g{background:#0b2a4a;color:#f5c945;border-radius:12px;padding:12px;margin-top:6px;font-size:19px;font-weight:700}
-.ft{text-align:center;padding:14px;font-size:14px;color:#33465c;border-top:1px dashed #d8dee7}.ft b{color:#0b2a4a}
-.btns{display:flex;gap:8px;margin-top:12px}.btns button{flex:1;border:0;border-radius:12px;padding:13px;font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;background:#f5c945;color:#0b2a4a}
+.inv{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 6px 24px rgba(11,42,74,.16);position:relative}
+.hd{background:linear-gradient(135deg,#071c35,#0f3459 60%,#123a63);color:#f5c945;text-align:center;padding:26px 14px 20px;position:relative}
+.hd:after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:linear-gradient(90deg,#b8891f,#f5c945,#fff3b0,#f5c945,#b8891f)}
+.hd img{width:92px;height:92px;border-radius:50%;border:3px solid #f5c945;object-fit:cover;box-shadow:0 0 0 5px rgba(245,201,69,.18),0 6px 16px rgba(0,0,0,.35);background:#fff}
+.hd h1{margin:12px 0 2px;font-size:26px;font-weight:800;letter-spacing:.3px}.hd p{margin:0;font-size:13px;color:#cfdbea;letter-spacing:1px}
+.ttl{display:flex;align-items:center;gap:10px;margin:20px 18px 0;color:#0b2a4a;font-weight:800;font-size:19px}
+.ttl:before,.ttl:after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,#d4a82c)}
+.ttl span{padding:0 4px}
+.bd{padding:14px 18px 8px}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.meta div{background:#f6f8fb;border-radius:10px;padding:9px 12px;font-size:12px;color:#5a6c80}.meta b{display:block;font-size:17px;color:#0b2a4a;font-weight:800;margin-top:1px}
+.box{border-right:4px solid #f5c945;background:#fbfcfe;border-radius:6px 10px 10px 6px;padding:10px 14px;font-size:14px;line-height:1.9;margin-bottom:14px;border-top:1px solid #edf0f5;border-bottom:1px solid #edf0f5;border-left:1px solid #edf0f5}
+.box small{display:block;color:#8a98a9;font-size:11px;letter-spacing:.5px}.box b{font-size:16px}
+table{width:100%;border-collapse:collapse;font-size:14px;border-radius:10px;overflow:hidden}
+th{background:#0b2a4a;color:#f5c945;padding:10px 8px;text-align:right;font-size:12.5px;font-weight:700}
+td{padding:11px 8px;border-bottom:1px solid #eef1f6;font-weight:600}tbody tr:nth-child(even) td{background:#f8fafc}
+td.n,th.n{text-align:center;white-space:nowrap}td.i,th.i{text-align:center;width:28px;color:#8a98a9;font-weight:600}
+.tot{margin-top:14px;font-size:14.5px}.tot div{display:flex;justify-content:space-between;padding:6px 4px;color:#33465c}.tot b{color:#0b2a4a}
+.tot .g{background:linear-gradient(135deg,#071c35,#123a63);color:#f5c945;border-radius:12px;padding:14px 16px;margin-top:8px;font-size:20px;font-weight:800;border:1px solid #d4a82c}
+.tot .g b,.tot .g span{color:#f5c945}
+.pay{margin-top:10px;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#5a6c80;padding:0 4px}.pay b{background:#fff6d6;color:#7a5a00;border:1px solid #f0d27a;border-radius:20px;padding:3px 12px;font-size:13px}
+.ft{text-align:center;padding:16px 14px 18px;margin-top:10px;background:#f6f8fb;font-size:14px;color:#33465c;position:relative}
+.ft:before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#b8891f,#f5c945,#fff3b0,#f5c945,#b8891f)}
+.ft b{color:#0b2a4a;font-size:15px}.ft small{display:block;margin-top:4px;color:#8a98a9;letter-spacing:1px;font-size:12px}
+.btns{display:flex;gap:8px;margin-top:12px}.btns button{flex:1;border:0;border-radius:12px;padding:13px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;background:#f5c945;color:#0b2a4a}
 .msg{text-align:center;padding:40px 10px;color:#6b7a8c}
-@media print{body{background:#fff}.btns{display:none}.inv{box-shadow:none;border-radius:0}.wrap{padding:0;max-width:none}.hd{-webkit-print-color-adjust:exact;print-color-adjust:exact}th,.tot .g{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+@media print{@page{margin:8mm}body{background:#fff}.btns{display:none}.inv{box-shadow:none;border-radius:0}.wrap{padding:0;max-width:none}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head><body><div class="wrap" id="app"><div class="msg">بيحمّل الفاتورة...</div></div>
 <script>
 const U='https://aiqfiiuozweqbqlgivqj.supabase.co',K='sb_publishable_POz8lTd9lNj2xId7tzghHQ_dkEbX3n9';
@@ -31,15 +48,15 @@ const q=new URLSearchParams(location.search);
     const fee=+o.delivery_fee||Math.max(0,(+o.total||0)-sub);
     const d=new Date(o.created_at).toLocaleDateString('ar-EG',{day:'numeric',month:'long',year:'numeric',timeZone:'Africa/Cairo'});
     const pay=o.payment==='vodafone'?'فودافون كاش':'كاش عند الاستلام';
-    app.innerHTML=`<div class="inv"><div class="hd"><img src="logo.jpg" alt=""><h1>منظفات القبطان</h1><p>نظافة .. ثقة .. جودة</p></div><div class="bd">
-    <div class="meta"><div>فاتورة رقم<br><b>#${o.id}</b></div><div style="text-align:left">التاريخ<br><b style="font-size:15px">${esc(d)}</b></div></div>
-    <div class="box"><b>${esc(o.customer_name)}</b><br>📞 ${esc(o.phone)}<br>📍 ${esc(o.address)}${o.city?' - '+esc(o.city):''}</div>
-    <table><thead><tr><th>الصنف</th><th class="n">الكمية</th><th class="n">السعر</th><th class="n">الإجمالي</th></tr></thead><tbody>${its.map(i=>`<tr><td>${esc(i.name)}</td><td class="n">${+i.qty}</td><td class="n">${+i.price}</td><td class="n">${(+i.qty)*(+i.price)}</td></tr>`).join('')}</tbody></table>
-    <div class="tot"><div><span>إجمالي المنتجات</span><b>${money(sub)}</b></div><div><span>خدمة التوصيل</span><b>${money(fee)}</b></div><div class="g"><span>الإجمالي المطلوب</span><span>${money(+o.total)}</span></div><div style="margin-top:6px"><span>طريقة الدفع</span><b>${pay}</b></div></div>
-    </div><div class="ft"><b>شكراً لثقتك في منظفات القبطان 🌹</b></div></div>
+    app.innerHTML=`<div class="inv"><div class="hd"><img src="logo.jpg" alt=""><h1>منظفات القبطان</h1><p>نظافة .. ثقة .. جودة</p></div><div class="ttl"><span>فاتورة بيع</span></div><div class="bd">
+    <div class="meta"><div>رقم الفاتورة<b>#${o.id}</b></div><div>التاريخ<b style="font-size:15px">${esc(d)}</b></div></div>
+    <div class="box"><small>فاتورة إلى</small><b>${esc(o.customer_name)}</b><br>📞 ${esc(o.phone)}<br>📍 ${esc(o.address)}${o.city?' - '+esc(o.city):''}</div>
+    <table><thead><tr><th class="i">#</th><th>الصنف</th><th class="n">الكمية</th><th class="n">السعر</th><th class="n">الإجمالي</th></tr></thead><tbody>${its.map((i,k)=>`<tr><td class="i">${k+1}</td><td>${esc(i.name)}</td><td class="n">${+i.qty}</td><td class="n">${+i.price}</td><td class="n">${(+i.qty)*(+i.price)}</td></tr>`).join('')}</tbody></table>
+    <div class="tot"><div><span>إجمالي المنتجات</span><b>${money(sub)}</b></div><div><span>خدمة التوصيل</span><b>${money(fee)}</b></div><div class="g"><span>الإجمالي المطلوب</span><span>${money(+o.total)}</span></div></div><div class="pay"><span>طريقة الدفع</span><b>${pay}</b></div>
+    </div><div class="ft"><b>شكراً لثقتك في منظفات القبطان 🌹</b><small>نظافة .. ثقة .. جودة</small></div></div>
     <div class="btns"><button type="button" id="bk" style="background:#0b2a4a;color:#f5c945;flex:.6">← رجوع</button><button type="button" id="pr">🖨️ طباعة / PDF</button><button type="button" id="im">🖼️ حفظ كصورة</button></div>`;
     document.title='فاتورة #'+o.id+' - منظفات القبطان';
-    document.getElementById('im').onclick=async()=>{const b=document.getElementById('im');b.textContent='بيجهّز...';try{if(!window.html2canvas){await new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';s.onload=ok;s.onerror=no;document.head.appendChild(s);});}const cv=await html2canvas(document.querySelector('.inv'),{scale:2,backgroundColor:'#ffffff',useCORS:true});const a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download='invoice-'+o.id+'.png';document.body.appendChild(a);a.click();a.remove();b.textContent='🖼️ حفظ كصورة';}catch(e){b.textContent='مش اشتغلت، استخدم طباعة / PDF';}};
+    document.getElementById('im').onclick=async()=>{const b=document.getElementById('im');b.textContent='بيجهّز...';try{if(!window.html2canvas){await new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';s.onload=ok;s.onerror=no;document.head.appendChild(s);});}const cv=await html2canvas(document.querySelector('.inv'),{scale:3,backgroundColor:'#ffffff',useCORS:true});const a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download='invoice-'+o.id+'.png';document.body.appendChild(a);a.click();a.remove();b.textContent='🖼️ حفظ كصورة';}catch(e){b.textContent='مش اشتغلت، استخدم طباعة / PDF';}};
     document.getElementById('bk').onclick=function(){history.length>1?history.back():(location.href='admin.html')};
     document.getElementById('pr').onclick=()=>{try{if(window.AndroidFCM&&AndroidFCM.print){AndroidFCM.print();return;}}catch(e){}window.print();};
   }catch(e){app.innerHTML='<div class="msg">مشكلة في الاتصال — جرّب تاني.</div>';}
