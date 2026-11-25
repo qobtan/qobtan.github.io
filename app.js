@@ -124,8 +124,9 @@ async function loadMyOrders() {
   badge(); if (tab === 'orders' && !det) { const y = scrollY; render(true); scrollTo(0, y); }
 }
 const fmtDate = s => { try { return new Date(s).toLocaleString('ar-EG', { weekday: 'short', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } };
+let JUST = null;
 function ordersView() {
-  let h = '<div class="sec"><span>طلباتي</span><em>' + (MYDATA ? MYDATA.length + ' طلب' : '') + '</em></div>';
+  let h = (JUST ? '<div class="empty" style="padding:14px 0 4px"><b style="font-size:20px">✅ الطلب اتبعت</b><br>رقم طلبك #' + JUST.id + '<br>الإجمالي ' + money(JUST.gt) + ' (شامل التوصيل)<br>' + THX + '<br>' + (JUST.pay === 'vodafone' ? (VF ? '<div class="vfnote" style="margin:10px 0">' + vfLine() + '</div>' : '') : 'هنكلمك على رقمك لتأكيد الطلب والتوصيل.') + '</div>' : '') + '<div class="sec"><span>طلباتي</span><em>' + (MYDATA ? MYDATA.length + ' طلب' : '') + '</em></div>';
   if (MYDATA === null) h += '<div class="empty">بنحمّل طلباتك...</div>';
   else if (!MYDATA.length) h += '<div class="empty">' + (MYERR ? 'مفيش اتصال دلوقتي. جرّب تاني بعد شوية.' : 'مفيش طلبات شغالة دلوقتي.') + '<br><button class="go" data-tab="shop">ابدأ اطلب</button></div>';
   else {
@@ -155,7 +156,7 @@ async function placeOrder(btn) {
     MYO = MYO.filter(o => o.id !== id); MYO.unshift({ id: id, token: res.token }); store.set('myorders', MYO); MYDATA = null;
     const wl = waLink(); const gt = grand(); const payP = PAY; try { if (localStorage.getItem('mute') !== '1') { const oa = new Audio('order.mp3'); oa.play().catch(() => {}); } } catch (e) {}
     cart = {}; store.set('cart', cart); badge();
-    view.innerHTML = `<div class="empty"><b style="font-size:20px">✅ الطلب اتبعت</b><br>رقم طلبك #${id}<br>الإجمالي ${money(gt)} (شامل التوصيل)<br>${THX}<br>${payP === 'vodafone' ? (VF ? '<div class="vfnote" style="margin:10px 0">' + vfLine() + '</div>' : '') : 'هنكلمك على رقمك لتأكيد الطلب والتوصيل.'}<br><button class="go" data-tab="orders">تابع طلبك</button> <button class="go" data-tab="shop" style="background:#eef2f7;color:#0b2a4a">رجوع للمنتجات</button></div>`;
+    JUST = { id: id, gt: gt, pay: payP }; tab = 'orders'; det = null; render(); scrollTo(0, 0); loadMyOrders();
   } catch (err) {
     btn.disabled = false; btn.textContent = 'ابعت الطلب';
     msg.style.color = '#b3261e'; msg.innerHTML = 'مفيش اتصال أو حصلت مشكلة. جرّب تاني، أو ابعت الطلب على واتساب: <a href="' + waLink() + '" target="_blank" rel="noopener" style="color:#1a9a52;font-weight:700">واتساب</a>';
@@ -175,7 +176,7 @@ document.addEventListener('click', e => {
   else if (t.dataset.sendrate) { sendRate(+t.dataset.sendrate, t); }
   else if (t.dataset.pay) { PAY = t.dataset.pay; store.set('pay', PAY); render(true); }
   else if (t.dataset.copy) { try { navigator.clipboard.writeText(t.dataset.copy); t.textContent = 'اتنسخ ✓'; } catch (e) { t.textContent = t.dataset.copy; } }
-  else if (t.dataset.tab) { det = null; tab = t.dataset.tab; render(); scrollTo(0, 0); if (tab === 'orders') loadMyOrders(); }
+  else if (t.dataset.tab) { det = null; JUST = null; tab = t.dataset.tab; render(); scrollTo(0, 0); if (tab === 'orders') loadMyOrders(); }
   else if (t.dataset.add) change(+t.dataset.add, 1);
   else if (t.dataset.inc) change(+t.dataset.inc, 1);
   else if (t.dataset.dec) change(+t.dataset.dec, -1);
