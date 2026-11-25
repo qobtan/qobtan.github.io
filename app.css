@@ -42,3 +42,4 @@ input:focus{outline:none;border-color:#d9a93a;background:#fff}
 
 .dd{margin:10px 0 12px;font-size:15px;line-height:1.9;color:#33465c}.dd p{margin:6px 0}.ck{display:flex;gap:8px;align-items:flex-start}.ck i{flex:none;width:22px;height:22px;border-radius:6px;background:#2bc16a;color:#fff;font-style:normal;font-size:14px;text-align:center;line-height:22px;margin-top:5px}
 .shr{display:block;margin:0 auto 100px;border:1.5px solid #dfe6ee;background:#fff;color:#0b2a4a;border-radius:999px;padding:10px 22px;font:inherit;font-weight:700;cursor:pointer}
+.sum .gt{font-weight:800;color:#0b2a4a}.sum .gt b{font-size:19px;color:#b8892b}

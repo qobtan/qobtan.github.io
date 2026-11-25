@@ -12,6 +12,10 @@ let cart = store.get('cart', {});
 let info = store.get('info', { name: '', phone: '', address: '' });
 let tab = 'shop', q = '', det = null;
 const money = n => n + ' ج.م';
+let FEE = store.get('fee', 25);
+const grand = () => total() + FEE;
+const THX = 'سعداء بخدمة حضرتك 🌹';
+async function loadFee() { try { const r = await fetch(SUPA_URL + '/rest/v1/app_settings?select=value&key=eq.delivery_fee', { headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON } }); const d = await r.json(); const v = parseFloat(d[0] && d[0].value); if (!isNaN(v)) { FEE = v; store.set('fee', v); render(true); } } catch (e) {} }
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const lines = () => PRODUCTS.filter(p => p.price > 0 && cart[p.id] > 0);
 const count = () => lines().reduce((s, p) => s + cart[p.id], 0);
@@ -43,7 +47,7 @@ function shopGrid() {
 function waLink() {
   const L = lines();
   const msg = ['طلب جديد من تطبيق منظفات القبطان', ...L.map(p => `${cart[p.id]} × ${p.name} = ${money(p.price * cart[p.id])}`),
-    `إجمالي المنتجات: ${money(total())}`, 'الدفع: كاش عند الاستلام', `الاسم: ${info.name.trim()}`, `التليفون: ${info.phone.trim()}`, `العنوان (الفيوم): ${info.address.trim()}`].join('\n');
+    `إجمالي المنتجات: ${money(total())}`, `خدمة توصيل: ${money(FEE)}`, `الإجمالي: ${money(grand())}`, 'الدفع: كاش عند الاستلام', `الاسم: ${info.name.trim()}`, `التليفون: ${info.phone.trim()}`, `العنوان (الفيوم): ${info.address.trim()}`, THX].join('\n');
   return `https://wa.me/${WA}?text=${encodeURIComponent(msg)}`;
 }
 function ready() { return lines().length > 0 && info.name.trim() && info.phone.trim() && info.address.trim(); }
@@ -52,7 +56,7 @@ function cartView() {
   view.innerHTML = `<div class="sec"><span>سلتك</span><em>${count()} قطعة</em></div>` + (L.length === 0 ? '<div class="empty">السلة فاضية<br><button class="go" data-tab="shop">ارجع للمنتجات</button></div>' : `
   <div class="lines">${L.map(p => `<div class="l2">${p.img ? `<img src="${p.img}" alt="">` : ''}<div class="li"><b>${esc(p.name)}</b><span>${cart[p.id]} × ${money(p.price)}</span><span class="lt">${money(p.price * cart[p.id])}</span></div>
   <div class="step"><button data-dec="${p.id}">−</button><bdi>${cart[p.id]}</bdi><button data-inc="${p.id}">+</button></div></div>`).join('')}</div>
-  <div class="sum"><div><span>عدد القطع</span><b>${count()}</b></div><div><span>إجمالي المنتجات</span><b>${money(total())}</b></div><div><span>مصاريف التوصيل</span><span>هتتحدد قبل التأكيد</span></div></div>
+  <div class="sum"><div><span>عدد القطع</span><b>${count()}</b></div><div><span>إجمالي المنتجات</span><b>${money(total())}</b></div><div><span>خدمة توصيل</span><b>${money(FEE)}</b></div><div class="gt"><span>الإجمالي</span><b>${money(grand())}</b></div></div><div class="thx" style="text-align:center;color:#0b2a4a;font-weight:700;margin:8px 0">${THX}</div>
   <div class="sec"><span>بيانات التوصيل</span><em>الفيوم</em></div>
   <label class="f"><span>الاسم</span><input type="text" id="f-name" value="${esc(info.name)}" autocomplete="name"></label>
   <label class="f"><span>رقم التليفون</span><input type="tel" id="f-phone" value="${esc(info.phone)}" autocomplete="tel"></label>
@@ -89,12 +93,12 @@ async function placeOrder(btn) {
   const msg = $('#pmsg'); btn.disabled = true; btn.textContent = 'بيتبعت...';
   try {
     const r = await fetch(SUPA_URL + '/rest/v1/rpc/place_order', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ p_name: info.name.trim(), p_phone: info.phone.trim(), p_address: info.address.trim(), p_city: 'الفيوم', p_payment: 'cash', p_items: items, p_total: total() }) });
+      body: JSON.stringify({ p_name: info.name.trim(), p_phone: info.phone.trim(), p_address: info.address.trim(), p_city: 'الفيوم', p_payment: 'cash', p_items: items, p_total: grand() }) });
     const id = await r.json();
     if (!r.ok || typeof id !== 'number') throw new Error('x');
-    const wl = waLink();
+    const wl = waLink(); const gt = grand();
     cart = {}; store.set('cart', cart); badge();
-    view.innerHTML = `<div class="empty"><b style="font-size:20px">✅ الطلب اتبعت</b><br>رقم طلبك #${id}<br>هنكلمك على رقمك لتأكيد الطلب والتوصيل.<br><a class="wa" href="${wl}" target="_blank" rel="noopener">لو حابب تبعته كمان على واتساب (اختياري)</a><button class="go" data-tab="shop">رجوع للمنتجات</button></div>`;
+    view.innerHTML = `<div class="empty"><b style="font-size:20px">✅ الطلب اتبعت</b><br>رقم طلبك #${id}<br>الإجمالي ${money(gt)} (شامل التوصيل)<br>${THX}<br>هنكلمك على رقمك لتأكيد الطلب والتوصيل.<br><a class="wa" href="${wl}" target="_blank" rel="noopener">لو حابب تبعته كمان على واتساب (اختياري)</a><button class="go" data-tab="shop">رجوع للمنتجات</button></div>`;
   } catch (err) {
     btn.disabled = false; btn.textContent = 'ابعت الطلب';
     msg.style.color = '#b3261e'; msg.innerHTML = 'مفيش اتصال أو حصلت مشكلة. جرّب تاني، أو ابعت الطلب على واتساب: <a href="' + waLink() + '" target="_blank" rel="noopener" style="color:#1a9a52;font-weight:700">واتساب</a>';
@@ -130,6 +134,7 @@ async function liveProducts() {
   } catch (e) {}
 }
 liveProducts();
+loadFee();
 
 /* salatSplash */
 (function () {
