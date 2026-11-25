@@ -203,16 +203,3 @@ main{padding-top:18px}
 .dctl .step button{background:linear-gradient(135deg,#f9e08f,#d9a93a) !important;color:#0a2547 !important}
 .dctl .step span,.dctl .step b{color:#f9e08f !important;font-weight:800}
 
-/* v60: 3 columns compact */
-.grid{grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:8px !important}
-.card{padding:6px !important;gap:4px !important;border-radius:14px !important}
-.card .pw{border-radius:10px}
-.card .tag{font-size:10px !important;padding:2px 6px !important}
-.card .t{font-size:12.5px !important;line-height:1.35 !important;min-height:34px}
-.card .more{font-size:11px !important;margin:0 !important}
-.card .pr{font-size:11px !important}
-.card .pr b{font-size:18px !important}
-.card .add{font-size:12.5px !important;padding:8px 4px !important}
-.card .step{padding:2px !important}
-.card .step button{width:28px !important;height:28px !important;font-size:16px !important}
-.card .step span,.card .step b{font-size:14px !important}
