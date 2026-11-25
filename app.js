@@ -83,7 +83,7 @@ function detailView(p) {
   view.innerHTML = `<button class="back" data-back="1">› رجوع للمنتجات</button>
   <div class="dimg">${p.img ? `<img src="${p.img}" alt="${esc(p.name)}">` : '<div class="ph"></div>'}</div>
   <h2 class="dt">${esc(p.name)}</h2><div class="dp">${p.price > 0 ? `<b>${p.price}</b> ج.م` : '<span class="soon">السعر قريبًا</span>'}</div>
-  ${p.desc ? `<div class="dd"><p>${esc(p.desc.intro)}</p>${p.desc.pts.map(t => `<p class="ck"><i>✓</i>${esc(t)}</p>`).join('')}</div>` : ''}
+  ${p.desc ? `<div class="dd">${String(p.desc.intro || '').split('\n').map(s => s.trim()).filter(Boolean).map(s => /^[✓•]/.test(s) ? `<p class="ck"><i>✓</i>${esc(s.replace(/^[✓•]\s*/, ''))}</p>` : `<p>${esc(s)}</p>`).join('')}${p.desc.pts.map(t => `<p class="ck"><i>✓</i>${esc(t)}</p>`).join('')}</div>` : ''}
   <div class="sum">${rows.map(r => `<div><span>${r[0]}</span><b>${esc(r[1])}</b></div>`).join('')}</div>
   <div class="dctl">${ctl(p)}</div><button class="shr" data-share="${p.id}">مشاركة المنتج</button>${count() ? `<div class="bar"><div><span>${count()} قطعة</span><b>${money(total())}</b></div><button class="go" data-tab="cart">كمّل الطلب</button></div>` : ''}`;
 }

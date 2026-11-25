@@ -152,11 +152,29 @@ async function load() {
   const r = await api('/rest/v1/products?select=*&order=sort.asc');
   if (!r.ok) { $('#list').innerHTML = '<div class="pcard msg err">مشكلة في التحميل — جرّب تاني</div>'; return; }
   rows = await r.json();
-  $('#list').innerHTML = rows.map(card).join('');
+  renderList();
 }
+function renderList() {
+  const q = ($('#psearch').value || '').trim().toLowerCase();
+  const list = rows.filter(p => !q || (p.name || '').toLowerCase().includes(q));
+  $('#pcount').textContent = list.length + ' منتج';
+  $('#list').innerHTML = list.map(p => `<button class="pli" type="button" data-open="${p.id}"><img src="${esc(p.img || 'logo.jpg')}" alt=""><span class="pn">${esc(p.name)}${p.detail ? `<small>${esc(p.detail)}</small>` : ''}</span><b>${+p.price || 0} <em>ج</em></b><i>‹</i></button>`).join('') || '<div class="pempty">مفيش منتج بالاسم ده</div>';
+}
+function openEdit(id) {
+  const p = rows.find(x => x.id === id); if (!p) return;
+  let o = $('#pedit');
+  if (!o) { o = document.createElement('div'); o.id = 'pedit'; document.body.appendChild(o); }
+  o.innerHTML = `<div class="phead"><button type="button" id="pclose">‹ رجوع للمنتجات</button></div>` + card(p);
+  o.hidden = false; o.scrollTop = 0; document.body.style.overflow = 'hidden';
+}
+function closeEdit() { const o = $('#pedit'); if (o) o.hidden = true; document.body.style.overflow = ''; renderList(); }
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-open]'); if (b) openEdit(+b.dataset.open);
+  if (e.target.closest && e.target.closest('#pclose')) closeEdit();
+});
 
 function card(p) {
-  const pts = Array.isArray(p.pts) ? p.pts.join('\n') : '';
+  const desc = [(p.intro || '').trim()].concat(Array.isArray(p.pts) ? p.pts.map(s => '✓ ' + s) : []).filter(Boolean).join('\n');
   return `<div class="pcard" data-id="${p.id}">
   <div class="prow">
     ${p.img ? `<img src="${esc(p.img)}" alt="">` : '<img src="logo.jpg" alt="">'}
@@ -169,10 +187,8 @@ function card(p) {
   <input type="number" class="f-price" min="0" step="1" value="${+p.price || 0}">
   <label class="lbl">تفاصيل قصيرة (مثال: 4 لتر) — اختياري</label>
   <input type="text" class="f-detail" value="${esc(p.detail || '')}">
-  <label class="lbl">الوصف الأول — اختياري</label>
-  <textarea class="f-intro" rows="2">${esc(p.intro || '')}</textarea>
-  <label class="lbl">نقاط الوصف (كل نقطة في سطر) — اختياري</label>
-  <textarea class="f-pts" rows="3">${esc(pts)}</textarea>
+  <label class="lbl">وصف المنتج</label>
+  <textarea class="f-intro" rows="7" placeholder="اكتب وصف المنتج هنا. كل سطر هيظهر لوحده للعميل، وابدأ السطر بعلامة ✓ لو عايزه نقطة.">${esc(desc)}</textarea>
   <input type="file" class="f-img" accept="image/*" hidden>
   <button class="filebtn" type="button" data-act="img">تغيير الصورة من الموبايل</button>
   <span class="hint2 imgstat"></span>
@@ -201,7 +217,7 @@ async function saveCard(el) {
     p_price: +el.querySelector('.f-price').value || 0,
     p_detail: el.querySelector('.f-detail').value.trim(),
     p_intro: el.querySelector('.f-intro').value.trim(),
-    p_pts: el.querySelector('.f-pts').value.split('\n').map(s => s.trim()).filter(Boolean)
+    p_pts: []
   };
   if (!body.p_name) { msg.className = 'msg err'; msg.textContent = 'الاسم مطلوب'; return; }
   msg.className = 'msg'; msg.textContent = 'بيحفظ...';
@@ -209,7 +225,7 @@ async function saveCard(el) {
   const changed = r && r.ok && Array.isArray(r.data) ? r.data.length : 0;
   if (changed > 0) {
     const row = rows.find(x => x.id === id);
-    if (row) Object.assign(row, { name: body.p_name, price: body.p_price, detail: body.p_detail, intro: body.p_intro, pts: body.p_pts });
+    if (row) Object.assign(row, { name: body.p_name, price: body.p_price, detail: body.p_detail, intro: body.p_intro, pts: [] });
     msg.className = 'msg ok'; msg.textContent = 'اتحفظ — ظهر في المتجر فورًا';
   } else { msg.className = 'msg err'; msg.textContent = 'فشل الحفظ — اتأكد من الرقم السري'; }
 }
@@ -219,7 +235,7 @@ async function delCard(el) {
   const name = el.querySelector('.f-name').value;
   if (!confirm('تمسح "' + name + '" نهائي؟')) return;
   const r = await rpc('admin_delete_product', { p_pin: PIN, p_id: id }).catch(() => null);
-  if (r && r.ok && r.data === true) { el.remove(); rows = rows.filter(x => x.id !== id); }
+  if (r && r.ok && r.data === true) { rows = rows.filter(x => x.id !== id); closeEdit(); }
   else { const msg = el.querySelector('.msg'); msg.className = 'msg err'; msg.textContent = 'فشل الحذف — اتأكد من الرقم السري'; }
 }
 
@@ -228,7 +244,7 @@ async function addNew() {
   const maxSort = rows.reduce((m, p) => Math.max(m, p.sort || 0), 0);
   const body = { p_pin: PIN, p_id: maxId + 1, p_sort: maxSort + 10, p_name: 'منتج جديد', p_price: 0, p_detail: '', p_intro: '', p_pts: [], p_img: '' };
   const r = await rpc('admin_add_product', body).catch(() => null);
-  if (r && r.ok && Array.isArray(r.data) && r.data.length) load(); else alert('فشل الإضافة — اتأكد من الرقم السري');
+  if (r && r.ok && Array.isArray(r.data) && r.data.length) { await load(); openEdit(maxId + 1); } else alert('فشل الإضافة — اتأكد من الرقم السري');
 }
 
 
@@ -282,6 +298,7 @@ $('#enter').addEventListener('click', enter);
 $('#pin').addEventListener('keydown', e => { if (e.key === 'Enter') enter(); });
 $('#logout').addEventListener('click', () => { localStorage.removeItem('adminpin'); nat.set(''); location.reload(); });
 $('#addnew').addEventListener('click', addNew);
+$('#psearch').addEventListener('input', renderList);
 $('#changepin').addEventListener('click', changePin);
 document.addEventListener('click', e => {
   const b = e.target.closest('button[data-act]');
