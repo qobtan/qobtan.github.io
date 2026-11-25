@@ -382,7 +382,7 @@ function renderOrders() {
   const chips = '<div class="ochips">' + OFILS.map(f => `<button type="button" class="ochip ${OFIL === f[0] ? 'on' : ''}" data-f="${f[0]}">${f[1]}<i>${cnt(f[0])}</i></button>`).join('') + '</div>';
   const list = data.filter(ofilter);
   const stats = '';
-  box.innerHTML = chips + (list.length ? list.map(o => {
+  box.innerHTML = '<button class="abtn sec" id="mo-open" type="button" style="margin:0 0 10px">+ أوردر يدوي (طلب من برّه التطبيق)</button>' + chips + (list.length ? list.map(o => {
     const its = o.items || [];
     const qty = its.reduce((s, i) => s + (+i.qty || 0), 0);
     const first = its[0] ? esc(its[0].name) : '';
@@ -606,4 +606,55 @@ document.addEventListener('click', async e => {
     if (r && r.ok && r.data === true) await loadExp(); else { m.className = 'msg err'; m.textContent = 'فشل الحفظ — جرّب تاني'; } return;
   }
   const d = t.closest('[data-edel]'); if (d) { if (!confirm('تمسح المصروف ده؟')) return; const r = await rpc('admin_del_expense', { p_pin: PIN, p_id: +d.dataset.edel }).catch(() => null); if (r && r.ok) loadExp(); }
+});
+
+/* ===== أوردر يدوي ===== */
+let MO = { cart: {}, q: '' };
+function moTotals() {
+  const sub = (rows || []).reduce((s, p) => s + (MO.cart[p.id] || 0) * (+p.price || 0), 0);
+  const fee = +($('#mo-fee') ? $('#mo-fee').value : 0) || 0; const n = Object.values(MO.cart).reduce((s, q) => s + q, 0);
+  return { sub, fee, n, total: sub + fee };
+}
+function moList() {
+  const q = MO.q.trim().toLowerCase();
+  $('#mo-list').innerHTML = (rows || []).filter(p => !q || (p.name || '').toLowerCase().includes(q)).map(p => { const c = MO.cart[p.id] || 0; return `<div class="crow mo-r ${c ? 'sel' : ''}"><div class="cn">${esc(p.name)}<small>${+p.price} ج.م</small></div><div class="stp"><button type="button" data-mo="-" data-pid="${p.id}">−</button><b>${c}</b><button type="button" data-mo="+" data-pid="${p.id}">+</button></div></div>`; }).join('');
+}
+function moSum() { const t = moTotals(); $('#mo-sum').innerHTML = `${t.n} قطعة · منتجات ${egp(t.sub)} + توصيل ${egp(t.fee)}<br><b>الإجمالي ${egp(t.total)}</b>`; }
+function openMO() {
+  MO = { cart: {}, q: '' };
+  let o = $('#moedit'); if (!o) { o = document.createElement('div'); o.id = 'moedit'; document.body.appendChild(o); }
+  const fee = ($('#feeval') && $('#feeval').value) || 25;
+  o.innerHTML = `<div class="phead"><button type="button" id="mo-close">‹ رجوع للطلبات</button></div><div class="pcard">
+    <label class="lbl" style="margin-top:0">اسم العميل</label><input type="text" id="mo-name">
+    <label class="lbl">رقم التليفون</label><input type="tel" inputmode="tel" id="mo-phone">
+    <label class="lbl">العنوان</label><input type="text" id="mo-addr" placeholder="المنطقة والشارع">
+    <label class="lbl">المنتجات</label><input type="search" id="mo-q" placeholder="🔍 دوّر على منتج"><div id="mo-list"></div>
+    <label class="lbl">خدمة التوصيل (ج.م)</label><input type="number" inputmode="decimal" min="0" id="mo-fee" value="${+fee}">
+    <label class="lbl">طريقة الدفع</label><select id="mo-pay"><option value="cash">كاش عند الاستلام</option><option value="vodafone">فودافون كاش</option></select>
+    <div class="mo-sum" id="mo-sum"></div>
+    <button class="abtn" type="button" id="mo-go">إنشاء الأوردر</button><div class="msg" id="mo-msg"></div></div>`;
+  o.hidden = false; o.scrollTop = 0; document.body.style.overflow = 'hidden'; moList(); moSum();
+}
+function closeMO() { const o = $('#moedit'); if (o) o.hidden = true; document.body.style.overflow = ''; }
+document.addEventListener('input', e => { if (e.target.id === 'mo-q') { MO.q = e.target.value; moList(); } if (e.target.id === 'mo-fee') moSum(); });
+document.addEventListener('click', async e => {
+  const t = e.target; if (!t.closest) return;
+  if (t.id === 'mo-open') { openMO(); return; }
+  if (t.id === 'mo-close') { closeMO(); loadOrders(); return; }
+  const s = t.closest('[data-mo]'); if (s) { const id = s.dataset.pid; const c = MO.cart[id] || 0; MO.cart[id] = Math.max(0, c + (s.dataset.mo === '+' ? 1 : -1)); if (!MO.cart[id]) delete MO.cart[id]; moList(); moSum(); return; }
+  if (t.id === 'mo-go') {
+    const m = $('#mo-msg'); const name = $('#mo-name').value.trim(), phone = $('#mo-phone').value.trim();
+    const items = Object.entries(MO.cart).map(([id, qty]) => ({ id: +id, qty }));
+    if (!name || !phone) { m.className = 'msg err'; m.textContent = 'اكتب اسم العميل ورقم التليفون'; return; }
+    if (!items.length) { m.className = 'msg err'; m.textContent = 'اختار منتج واحد على الأقل'; return; }
+    t.disabled = true; m.className = 'msg'; m.textContent = 'بيعمل الأوردر...';
+    const r = await rpc('admin_create_order', { p_pin: PIN, p_name: name, p_phone: phone, p_address: $('#mo-addr').value.trim(), p_payment: $('#mo-pay').value, p_items: items, p_fee: +$('#mo-fee').value || 0, p_status: 'confirmed' }).catch(() => null);
+    if (r && r.ok && r.data && r.data.id) {
+      const o = { id: r.data.id, token: r.data.token, customer_name: name, phone };
+      $('#moedit .pcard').innerHTML = `<div class="stitle" style="text-align:center">✅ الأوردر #${o.id} اتعمل</div><div class="msub" style="text-align:center">الإجمالي ${egp(+r.data.total)} · مفيش إشعار اتبعت لحد</div>
+        <a class="abtn" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box" href="${esc(invUrl(o))}" target="_blank" rel="noopener">🧾 افتح الفاتورة</a>
+        <a class="abtn sec" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box;background:#1a9a52;color:#fff" href="${esc(waInv(o))}" target="_blank" rel="noopener">ابعت الفاتورة واتساب</a>
+        <button class="abtn danger" type="button" id="mo-close" style="background:#eef1f6;color:#0b2a4a">تمام، رجوع للطلبات</button>`;
+    } else { t.disabled = false; m.className = 'msg err'; m.textContent = 'فشل إنشاء الأوردر — جرّب تاني'; }
+  }
 });
