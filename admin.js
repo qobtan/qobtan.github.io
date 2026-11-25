@@ -25,9 +25,9 @@ async function checkPin(p) {
 
 
 function showSec(s) {
-  if (!['orders', 'products', 'profit', 'materials', 'more', 'customers', 'expenses', 'settings'].includes(s)) s = 'orders';
+  if (!['orders', 'products', 'profit', 'materials', 'more', 'customers', 'expenses', 'referrals', 'settings'].includes(s)) s = 'orders';
   document.querySelectorAll('.tabsec').forEach(e => e.classList.toggle('on', e.id === 'sec-' + s));
-  document.querySelectorAll('#bnav button').forEach(b => b.classList.toggle('on', b.dataset.sec === (['customers', 'expenses', 'settings'].includes(s) ? 'more' : s)));
+  document.querySelectorAll('#bnav button').forEach(b => b.classList.toggle('on', b.dataset.sec === (['customers', 'expenses', 'referrals', 'settings'].includes(s) ? 'more' : s)));
   try { localStorage.setItem('admsec', s); } catch (e) {}
   window.scrollTo(0, 0);
 }
