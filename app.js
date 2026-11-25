@@ -1,3 +1,6 @@
+const SUPA_URL = 'https://aiqfiiuozweqbqlgivqj.supabase.co';
+const SUPA_ANON = 'sb_publishable_POz8lTd9lNj2xId7tzghHQ_dkEbX3n9';
+let PRODUCTS = window.PRODUCTS || [];
 const WA = '201028540358';
 const $ = s => document.querySelector(s);
 const view = $('#view');
@@ -89,4 +92,19 @@ document.addEventListener('click', e => {
   else if (t.dataset.inc) change(+t.dataset.inc, 1);
   else if (t.dataset.dec) change(+t.dataset.dec, -1);
 });
+
+const cachedLive = store.get('liveProducts', null);
+if (Array.isArray(cachedLive) && cachedLive.length) PRODUCTS = cachedLive;
 render();
+async function liveProducts() {
+  try {
+    const r = await fetch(SUPA_URL + '/rest/v1/products?select=*&order=sort.asc', { headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON } });
+    if (!r.ok) return;
+    const rows = await r.json();
+    if (!Array.isArray(rows) || !rows.length) return;
+    PRODUCTS = rows.map(x => ({ id: x.id, name: x.name, detail: x.detail || '', price: +x.price || 0, img: x.img || '', desc: (x.intro || (Array.isArray(x.pts) && x.pts.length)) ? { intro: x.intro || '', pts: Array.isArray(x.pts) ? x.pts : [] } : null }));
+    store.set('liveProducts', PRODUCTS);
+    render(true);
+  } catch (e) {}
+}
+liveProducts();
