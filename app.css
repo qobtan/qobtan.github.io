@@ -166,3 +166,11 @@ main{padding-top:18px}
 .step button{width:42px;height:42px}
 .search input{font-size:17px}
 .tabs button{font-size:15.5px}
+
+/* ===== invite v53 ===== */
+.tabs button{font-size:14px;padding:12px 2px}
+.invh{text-align:center;color:#fff;margin:6px 0 16px}.invi{font-size:46px}.invh h2{margin:6px 0;font-size:22px;color:#f6d77b}.invh p{margin:0;font-size:15px;line-height:1.8;color:#eef3fa}
+.invc{display:flex;align-items:center;justify-content:center;gap:12px;background:#f6f8fb;border:1.5px solid #d9a93a;border-radius:20px;padding:16px;margin:10px 0}
+.invc small{color:#4a5a6e;font-size:14px}.invc b{font-size:28px;letter-spacing:3px;color:#0b2a4a;font-family:Georgia,serif}
+.invs{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:14px 0}
+.invs div{background:#f6f8fb;border:1px solid #e3cd88;border-radius:16px;padding:12px;text-align:center}.invs b{display:block;font-size:26px;color:#0b2a4a}.invs span{font-size:13px;color:#4a5a6e}

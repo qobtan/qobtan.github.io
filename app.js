@@ -13,7 +13,12 @@ let info = store.get('info', { name: '', phone: '', address: '' });
 let tab = /tab=orders/.test(location.search) ? 'orders' : 'shop', q = '', det = null;
 const money = n => n + ' ج.م';
 let FEE = store.get('fee', 25);
-const grand = () => total() + FEE;
+let CREDIT = 0, CREDPH = '';
+const disc = () => CREDIT > 0 ? Math.round(FEE / 2) : 0;
+const grand = () => total() + FEE - disc();
+const rp = async (n, b) => { try { const r = await fetch(SUPA_URL + '/rest/v1/rpc/' + n, { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify(b) }); return r.ok ? await r.json() : null; } catch (e) { return null; } };
+(function () { const m = /[?&]ref=([A-Za-z0-9]+)/.exec(location.search); if (m) { try { localStorage.setItem('refcode', JSON.stringify(m[1].toUpperCase())); } catch (e) {} } })();
+async function loadCredit() { const ph = (info.phone || '').replace(/\D/g, ''); if (ph.length < 10 || ph === CREDPH) return; CREDPH = ph; const r = await rp('ref_credit', { p_phone: ph }); const n = r && r.available > 0 ? 1 : 0; if (n !== CREDIT) { CREDIT = n; if (tab === 'cart' && det === null) render(true); } }
 let PAY = store.get('pay', 'cash'); if (PAY !== 'vodafone') PAY = 'cash';
 let VF = store.get('vf', '01028540358');
 const vfLine = () => `للدفع عبر فودافون كاش، حوّل إجمالي طلبك على الرقم التالي، ونتشرف بخدمتك 🌹<div style="margin-top:6px"><b dir="ltr">${esc(VF)}</b> <button type="button" class="vfcopy" data-copy="${esc(VF)}">نسخ</button></div>`;
@@ -51,7 +56,7 @@ function shopGrid() {
 function waLink() {
   const L = lines();
   const msg = ['طلب جديد من تطبيق منظفات القبطان', ...L.map(p => `${cart[p.id]} × ${p.name} = ${money(p.price * cart[p.id])}`),
-    `إجمالي المنتجات: ${money(total())}`, `خدمة توصيل: ${money(FEE)}`, `الإجمالي: ${money(grand())}`, `الدفع: ${payLabel(PAY)}`, `الاسم: ${info.name.trim()}`, `التليفون: ${info.phone.trim()}`, `العنوان (الفيوم): ${info.address.trim()}`, THX].join('\n');
+    `إجمالي المنتجات: ${money(total())}`, `خدمة توصيل: ${money(FEE - disc())}`, `الإجمالي: ${money(grand())}`, `الدفع: ${payLabel(PAY)}`, `الاسم: ${info.name.trim()}`, `التليفون: ${info.phone.trim()}`, `العنوان (الفيوم): ${info.address.trim()}`, THX].join('\n');
   return `https://wa.me/${WA}?text=${encodeURIComponent(msg)}`;
 }
 function ready() { return lines().length > 0 && info.name.trim() && info.phone.trim() && info.address.trim(); }
@@ -60,8 +65,8 @@ function cartView() {
   view.innerHTML = `<div class="sec"><span>سلتك</span><em>${count()} قطعة</em></div>` + (L.length === 0 ? '<div class="empty">السلة فاضية<br><button class="go" data-tab="shop">ارجع للمنتجات</button></div>' : `
   <div class="lines">${L.map(p => `<div class="l2">${p.img ? `<img src="${p.img}" alt="">` : ''}<div class="li"><b>${esc(p.name)}</b><span>${cart[p.id]} × ${money(p.price)}</span><span class="lt">${money(p.price * cart[p.id])}</span></div>
   <div class="step"><button data-dec="${p.id}">−</button><bdi>${cart[p.id]}</bdi><button data-inc="${p.id}">+</button></div></div>`).join('')}</div>
-  <div class="sum"><div><span>عدد القطع</span><b>${count()}</b></div><div><span>إجمالي المنتجات</span><b>${money(total())}</b></div><div><span>خدمة توصيل</span><b>${money(FEE)}</b></div><div class="gt"><span>الإجمالي</span><b>${money(grand())}</b></div></div><div class="thx" style="text-align:center;color:#0b2a4a;font-weight:700;margin:8px 0">${THX}</div>
-  <div class="sec"><span>بيانات التوصيل</span><em>الفيوم</em></div>
+  <div class="sum"><div><span>عدد القطع</span><b>${count()}</b></div><div><span>إجمالي المنتجات</span><b>${money(total())}</b></div><div><span>خدمة توصيل${disc() ? ' (خصم دعوة صديق 50%)' : ''}</span><b>${money(FEE - disc())}</b></div><div class="gt"><span>الإجمالي</span><b>${money(grand())}</b></div></div><div class="thx" style="text-align:center;color:#0b2a4a;font-weight:700;margin:8px 0">${THX}</div>
+  ${refNote()}<div class="sec"><span>بيانات التوصيل</span><em>الفيوم</em></div>
   <label class="f"><span>الاسم</span><input type="text" id="f-name" value="${esc(info.name)}" autocomplete="name"></label>
   <label class="f"><span>رقم التليفون</span><input type="tel" id="f-phone" value="${esc(info.phone)}" autocomplete="tel"></label>
   <label class="f"><span>العنوان بالتفصيل</span><input type="text" id="f-address" value="${esc(info.address)}" autocomplete="street-address"></label>
@@ -181,7 +186,7 @@ function ordersView() {
   }
   view.innerHTML = h;
 }
-function render(keepScroll) { badge(); document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab)); const y = scrollY; if (det !== null && tab === 'shop') detailView(PRODUCTS.find(p => p.id === det)); else tab === 'shop' ? shop() : tab === 'orders' ? ordersView() : cartView(); if (keepScroll) scrollTo(0, y); }
+function render(keepScroll) { badge(); document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab)); const y = scrollY; if (det !== null && tab === 'shop') detailView(PRODUCTS.find(p => p.id === det)); else tab === 'shop' ? shop() : tab === 'orders' ? ordersView() : tab === 'invite' ? inviteView() : (cartView(), loadCredit()); if (keepScroll) scrollTo(0, y); }
 async function placeOrder(btn) {
   if (!ready()) return;
   const L = lines();
@@ -194,7 +199,8 @@ async function placeOrder(btn) {
     const id = res && res.id;
     if (!r.ok || typeof id !== 'number' || !res.token) throw new Error('x');
     MYO = MYO.filter(o => o.id !== id); MYO.unshift({ id: id, token: res.token }); store.set('myorders', MYO); MYDATA = null;
-    const wl = waLink(); const gt = grand(); const payP = PAY; try { if (localStorage.getItem('mute') !== '1') { const oa = new Audio('order.mp3'); oa.play().catch(() => {}); } } catch (e) {}
+    let dsc = 0; try { const rc = store.get('refcode', ''); if (rc) { await rp('ref_apply', { p_code: rc, p_order_id: id, p_token: res.token }); store.set('refcode', ''); } if (CREDIT > 0) { const u = await rp('ref_use_credit', { p_order_id: id, p_token: res.token }); if (u && u.ok) dsc = +u.discount || 0; CREDIT = 0; CREDPH = ''; } } catch (e) {}
+    const wl = waLink(); const gt = total() + FEE - dsc; const payP = PAY; try { if (localStorage.getItem('mute') !== '1') { const oa = new Audio('order.mp3'); oa.play().catch(() => {}); } } catch (e) {}
     cart = {}; store.set('cart', cart); badge();
     JUST = { id: id, gt: gt, pay: payP, askPush: false }; if (canPush()) { if (Notification.permission === 'granted') pushSave({ id: id, token: res.token }).catch(() => {}); else if (Notification.permission === 'default') JUST.askPush = true; } tab = 'orders'; det = null; render(); scrollTo(0, 0); loadMyOrders();
   } catch (err) {
@@ -333,3 +339,35 @@ document.addEventListener('visibilitychange', () => { if (!BG) return; if (docum
 loadMyOrders();
 setInterval(() => { if (!document.hidden) loadMyOrders(); }, 45000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) loadMyOrders(); });
+
+/* ===== دعوة صديق ===== */
+let INV = null, INVBUSY = false;
+const refNote = () => { const rc = store.get('refcode', ''); return rc && !MYO.length ? '<div class="vfnote" style="margin-bottom:12px">🎁 كود دعوة صديقك <b dir="ltr">' + esc(rc) + '</b> متسجل. أول طلب ليك هيحسبه له.</div>' : ''; };
+async function loadInvite() {
+  const ph = (info.phone || '').replace(/\D/g, ''); if (ph.length < 10 || INVBUSY) return; INVBUSY = true;
+  const r = await rp('ref_get_code', { p_phone: ph }); INVBUSY = false; INV = r && r.code ? r : false; if (tab === 'invite') inviteView();
+}
+function inviteView() {
+  const ph = (info.phone || '').replace(/\D/g, '');
+  const link = location.origin + location.pathname + '?ref=' + (INV && INV.code || '');
+  const txt = 'جرّب تطبيق منظفات القبطان، توصيل لحد البيت في الفيوم 🧴\nاستخدم كود الدعوة ' + (INV && INV.code || '') + ' عند أول طلب.\n' + link;
+  let h = '<div class="invh"><div class="invi">🎁</div><h2>ادعو صديقك واكسب خصم</h2><p>لما صاحبك يطلب أول أوردر وياخده، توصيلك الجاي بنص السعر (' + money(Math.round(FEE / 2)) + ' بدل ' + money(FEE) + ').</p></div>';
+  if (ph.length < 10) h += '<label class="f"><span>اكتب رقم تليفونك عشان نطلعلك كودك</span><input type="tel" id="inv-phone" placeholder="01xxxxxxxxx"></label><button class="go" id="inv-go" type="button" style="width:100%">هات كودي</button>';
+  else if (INV === null) { h += '<div class="hint">بنحضّر كودك...</div>'; loadInvite(); }
+  else if (INV === false) h += '<div class="hint">مفيش اتصال دلوقتي. جرّب تاني.</div><button class="go" id="inv-retry" type="button">إعادة المحاولة</button>';
+  else {
+    h += '<div class="invc"><small>كودك</small><b dir="ltr">' + esc(INV.code) + '</b><button type="button" class="vfcopy" data-copy="' + esc(INV.code) + '">نسخ</button></div>'
+      + '<a class="wa" id="inv-wa" href="https://wa.me/?text=' + encodeURIComponent(txt) + '" target="_blank" rel="noopener">ابعت الدعوة على واتساب</a>'
+      + '<div class="invs"><div><b>' + INV.invited + '</b><span>صحاب طلبوا بكودك</span></div><div><b>' + INV.delivered + '</b><span>طلباتهم اتسلمت</span></div><div><b>' + INV.available + '</b><span>خصم متاح ليك</span></div><div><b>' + INV.used + '</b><span>خصم اتستخدم</span></div></div>'
+      + '<div class="note">الخصم بيتسجل لما أول أوردر لصاحبك يتسلم، وبيتطبق تلقائي على توصيل طلبك الجاي (مرة لكل صديق). مينفعش تستخدم كودك لنفسك، وكل صديق ليه مرة واحدة بس.</div>';
+  }
+  if (!MYO.length) h += '<div class="sec" style="display:block;margin-top:22px"><span style="display:block;font-size:17px;color:#fff;font-weight:700">عندك كود من صديق؟</span></div><div style="display:flex;gap:8px"><input type="text" id="inv-code" dir="ltr" placeholder="مثال: QA1B2C3" value="' + esc(store.get('refcode', '')) + '" style="flex:1;padding:14px;border-radius:14px;border:1.5px solid #e1e8f2;font-size:16px;text-transform:uppercase"><button class="go" id="inv-save" type="button">حفظ</button></div><div class="note" id="inv-msg"></div>';
+  view.innerHTML = h;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.id === 'inv-go') { const v = ($('#inv-phone').value || '').replace(/\D/g, ''); if (v.length < 10) return; info.phone = v; store.set('info', info); INV = null; inviteView(); }
+  else if (b.id === 'inv-retry') { INV = null; inviteView(); }
+  else if (b.id === 'inv-save') { const v = ($('#inv-code').value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, ''); store.set('refcode', v); $('#inv-msg').textContent = v ? 'اتسجل الكود ✓ هيتحسب لصاحبك مع أول طلب ليك.' : 'اتمسح الكود.'; }
+});
+document.addEventListener('change', e => { if (e.target.id === 'f-phone') { info.phone = e.target.value; store.set('info', info); CREDPH = ''; loadCredit(); } });

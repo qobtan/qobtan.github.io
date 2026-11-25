@@ -32,7 +32,7 @@ function showSec(s) {
   window.scrollTo(0, 0);
 }
 document.querySelectorAll('#bnav button').forEach(b => b.addEventListener('click', () => { showSec(b.dataset.sec); if (b.dataset.sec === 'orders') loadOrders(); if (b.dataset.sec === 'profit') loadProfit(); if (b.dataset.sec === 'materials') setMS(($('#recbox') && !$('#recbox').hidden) ? 'rec' : 'mat'); if (b.dataset.sec === 'products') loadStock(); }));
-document.addEventListener('click', e => { const g = e.target.closest && e.target.closest('[data-go]'); if (g) { showSec(g.dataset.go); if (g.dataset.go === 'customers') loadCustomers(); if (g.dataset.go === 'expenses') loadExp(); } });
+document.addEventListener('click', e => { const g = e.target.closest && e.target.closest('[data-go]'); if (g) { showSec(g.dataset.go); if (g.dataset.go === 'customers') loadCustomers(); if (g.dataset.go === 'expenses') loadExp(); if (g.dataset.go === 'referrals') loadRef(); } });
 function enterPanel() { $('#bnav').hidden = false; const s0 = (new URLSearchParams(location.search).get('tab')) || 'orders'; showSec(s0); if (s0 === 'profit') loadProfit(); if (s0 === 'materials') loadMats(); loadStock(); }
 
 // ===== الأرباح =====
@@ -658,3 +658,15 @@ document.addEventListener('click', async e => {
     } else { t.disabled = false; m.className = 'msg err'; m.textContent = 'فشل إنشاء الأوردر — جرّب تاني'; }
   }
 });
+
+/* ===== دعوات الأصدقاء ===== */
+async function loadRef() {
+  const box = $('#refbox'); box.innerHTML = '<div class="hint2">بيحمّل...</div>';
+  const r = await rpc('admin_ref_list', { p_pin: PIN }).catch(() => null);
+  if (!r || !r.ok || !Array.isArray(r.data)) { box.innerHTML = '<div class="msg err">مشكلة في التحميل — جرّب تاني</div>'; return; }
+  const L = r.data, ST = { new: 'جديد', confirmed: 'اتأكد', shipping: 'في الطريق', delivered: 'اتسلم', canceled: 'اتلغى' };
+  const ok = L.filter(x => x.order_status === 'delivered').length, used = L.filter(x => x.used_order).length;
+  box.innerHTML = `<div class="pgrid"><div class="pst"><span>دعوات اتسجلت</span><b>${L.length}</b></div><div class="pst"><span>طلبات صحاب اتسلمت</span><b>${ok}</b></div><div class="pst"><span>خصومات اتطبقت</span><b>${used}</b></div><div class="pst"><span>خصومات لسه متاحة</span><b>${ok - used}</b></div></div>
+  <div class="hint2" style="margin:0 4px 8px">الخصم = نص سعر التوصيل على الطلب الجاي لصاحب الكود، بعد ما أول طلب لصديقه يتسلم. بيتطبق تلقائي.</div>
+  <div class="pcard">${L.length ? L.map(x => `<div class="crow"><div class="cn">${esc(x.referrer_name || 'عميل')} <small>${esc(x.referrer)}</small> دعا ${esc(x.referee_name || 'صديق')} <small>${esc(x.referee)} · كود ${esc(x.code)} · طلب #${x.order_id} (${ST[x.order_status] || esc(x.order_status || '')})</small><small>${x.used_order ? '✅ الخصم اتطبق على طلب #' + x.used_order : (x.order_status === 'delivered' ? '🎁 الخصم متاح للطلب الجاي' : '⏳ مستني تسليم طلب الصديق')}</small></div></div>`).join('') : '<div class="hint2">لسه مفيش دعوات.</div>'}</div>`;
+}
