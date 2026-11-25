@@ -136,12 +136,18 @@ async function pushSave(ref) {
   return r.ok && (await r.json()) === true;
 }
 async function enablePush(btn) {
+  const say = (t) => { let m = btn.parentNode.querySelector('.pm'); if (!m) { m = document.createElement('div'); m.className = 'pm'; m.style.cssText = 'margin-top:10px;font-size:13px;color:#ffd9d9;line-height:1.7'; btn.parentNode.appendChild(m); } m.innerHTML = t; };
   try {
-    const perm = await Notification.requestPermission();
-    if (perm !== 'granted') { btn.textContent = 'مقدرناش نفعّل الإشعارات'; return; }
-    for (const o of MYO) { try { await pushSave(o); } catch (e) {} }
+    let perm = Notification.permission;
+    if (perm === 'denied') { say('الإشعارات متقفولة للموقع ده في المتصفح. افتح القفل 🔒 جنب عنوان الموقع فوق، اختار «الأذونات» أو «إعدادات الموقع»، وخلّي «الإشعارات» = سماح، وبعدين اضغط الزرار تاني.'); return; }
+    perm = await Notification.requestPermission();
+    if (perm === 'denied') { say('اتقفلت الإشعارات. افتح القفل 🔒 جنب عنوان الموقع، «الأذونات»، وخلّي الإشعارات = سماح، وجرّب تاني.'); return; }
+    if (perm !== 'granted') { say('ما اخترتش «سماح». اضغط الزرار تاني واختار «سماح».'); return; }
+    let ok = 0, err = '';
+    for (const o of MYO) { try { if (await pushSave(o)) ok++; } catch (e) { err = (e && e.name ? e.name : 'x') + ': ' + (e && e.message ? e.message : ''); } }
+    if (!ok) { say('الإذن اتفعّل بس التسجيل ما كملش (' + esc(err.slice(0, 80)) + '). جرّب تاني بعد شوية.'); return; }
     store.set('pushon', 1); JUST && (JUST.askPush = false); btn.parentNode.innerHTML = '🔔 تمام، هنبعتلك إشعار مع كل خطوة في طلبك';
-  } catch (e) { btn.textContent = 'حصلت مشكلة، جرّب تاني'; }
+  } catch (e) { say('حصلت مشكلة (' + esc(((e && e.name) || '') + ' ' + ((e && e.message) || '')).slice(0, 90) + ').'); }
 }
 let JUST = null;
 function ordersView() {
