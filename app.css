@@ -221,3 +221,11 @@ html,body{overscroll-behavior-y:contain}
 .pw img,.pw .ph{border:0 !important}
 .dimg{border:0 !important;box-shadow:0 6px 18px rgba(0,0,0,.28) !important}
 .dimg img,.dimg .ph{border:0 !important}
+
+/* v66: big edge-to-edge photo */
+.card{padding:0 0 10px !important;gap:6px !important;overflow:hidden !important;border-radius:20px !important}
+.card .pw{margin:0 !important;border-radius:0 !important}
+.card .pw img,.card .pw .ph{border-radius:0 !important;aspect-ratio:1/1.12 !important;object-fit:cover !important;width:100% !important}
+.card .tag{top:8px !important;right:8px !important}
+.card .t,.card .more,.card .pr,.card .step,.card .add,.card .soon{margin-left:10px !important;margin-right:10px !important}
+.card .step,.card .add{width:calc(100% - 20px) !important;box-sizing:border-box}
