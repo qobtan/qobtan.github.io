@@ -252,3 +252,8 @@ html,body{overscroll-behavior-y:contain}
 html,body{background:#0b141a !important}
 .tabs.stuck{box-shadow:0 0 0 10px #0b141a,0 10px 18px rgba(0,0,0,.4) !important}
 .dimg{background:transparent !important;border:0 !important;box-shadow:none !important;border-radius:16px !important;overflow:hidden !important}
+
+.card .step{width:104px !important;height:32px !important;padding:0 !important;box-sizing:border-box;align-self:flex-start}
+.card .step button{width:32px !important;height:32px !important;font-size:18px !important}
+.card .step bdi{color:#f9e08f;font-weight:800;font-size:15px}
+.card .add{min-width:104px;height:32px !important;padding:0 12px !important}
