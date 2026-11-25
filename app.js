@@ -14,7 +14,7 @@ let tab = /tab=orders/.test(location.search) ? 'orders' : 'shop', q = '', det = 
 const money = n => n + ' ج.م';
 let FEE = store.get('fee', 25);
 let CREDIT = 0, CREDPH = '';
-const disc = () => CREDIT > 0 ? Math.round(FEE / 2) : 0;
+const disc = () => CREDIT > 0 ? FEE : 0;
 const grand = () => total() + FEE - disc();
 const rp = async (n, b) => { try { const r = await fetch(SUPA_URL + '/rest/v1/rpc/' + n, { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify(b) }); return r.ok ? await r.json() : null; } catch (e) { return null; } };
 (function () { const m = /[?&]ref=([A-Za-z0-9]+)/.exec(location.search); if (m) { try { localStorage.setItem('refcode', JSON.stringify(m[1].toUpperCase())); } catch (e) {} } })();
@@ -65,7 +65,7 @@ function cartView() {
   view.innerHTML = `<div class="sec"><span>سلتك</span><em>${count()} قطعة</em></div>` + (L.length === 0 ? '<div class="empty">السلة فاضية<br><button class="go" data-tab="shop">ارجع للمنتجات</button></div>' : `
   <div class="lines">${L.map(p => `<div class="l2">${p.img ? `<img src="${p.img}" alt="">` : ''}<div class="li"><b>${esc(p.name)}</b><span>${cart[p.id]} × ${money(p.price)}</span><span class="lt">${money(p.price * cart[p.id])}</span></div>
   <div class="step"><button data-dec="${p.id}">−</button><bdi>${cart[p.id]}</bdi><button data-inc="${p.id}">+</button></div></div>`).join('')}</div>
-  <div class="sum"><div><span>عدد القطع</span><b>${count()}</b></div><div><span>إجمالي المنتجات</span><b>${money(total())}</b></div><div><span>خدمة توصيل${disc() ? ' (خصم دعوة صديق 50%)' : ''}</span><b>${money(FEE - disc())}</b></div><div class="gt"><span>الإجمالي</span><b>${money(grand())}</b></div></div><div class="thx" style="text-align:center;color:#0b2a4a;font-weight:700;margin:8px 0">${THX}</div>
+  <div class="sum"><div><span>عدد القطع</span><b>${count()}</b></div><div><span>إجمالي المنتجات</span><b>${money(total())}</b></div><div><span>خدمة توصيل${disc() ? ' (توصيل مجاني - دعوة أصدقاء)' : ''}</span><b>${money(FEE - disc())}</b></div><div class="gt"><span>الإجمالي</span><b>${money(grand())}</b></div></div><div class="thx" style="text-align:center;color:#0b2a4a;font-weight:700;margin:8px 0">${THX}</div>
   ${refNote()}<div class="sec"><span>بيانات التوصيل</span><em>الفيوم</em></div>
   <label class="f"><span>الاسم</span><input type="text" id="f-name" value="${esc(info.name)}" autocomplete="name"></label>
   <label class="f"><span>رقم التليفون</span><input type="tel" id="f-phone" value="${esc(info.phone)}" autocomplete="tel"></label>
@@ -351,15 +351,16 @@ function inviteView() {
   const ph = (info.phone || '').replace(/\D/g, '');
   const link = location.origin + location.pathname + '?ref=' + (INV && INV.code || '');
   const txt = 'جرّب تطبيق منظفات القبطان، توصيل لحد البيت في الفيوم 🧴\nاستخدم كود الدعوة ' + (INV && INV.code || '') + ' عند أول طلب.\n' + link;
-  let h = '<div class="invh"><div class="invi">🎁</div><h2>ادعو صديقك واكسب خصم</h2><p>لما صاحبك يطلب أول أوردر وياخده، توصيلك الجاي بنص السعر (' + money(Math.round(FEE / 2)) + ' بدل ' + money(FEE) + ').</p></div>';
+  let h = '<div class="invh"><div class="invi">🎁</div><h2>ادعو 3 أصحاب واكسب توصيل مجاني</h2><p>كل 3 أصحاب يطلبوا أول أوردر بكودك ويستلموه، توصيلك الجاي ببلاش (' + money(0) + ' بدل ' + money(FEE) + ').</p></div>';
   if (ph.length < 10) h += '<label class="f"><span>اكتب رقم تليفونك عشان نطلعلك كودك</span><input type="tel" id="inv-phone" placeholder="01xxxxxxxxx"></label><button class="go" id="inv-go" type="button" style="width:100%">هات كودي</button>';
   else if (INV === null) { h += '<div class="hint">بنحضّر كودك...</div>'; loadInvite(); }
   else if (INV === false) h += '<div class="hint">مفيش اتصال دلوقتي. جرّب تاني.</div><button class="go" id="inv-retry" type="button">إعادة المحاولة</button>';
   else {
     h += '<div class="invc"><small>كودك</small><b dir="ltr">' + esc(INV.code) + '</b><button type="button" class="vfcopy" data-copy="' + esc(INV.code) + '">نسخ</button></div>'
       + '<a class="wa" id="inv-wa" href="https://wa.me/?text=' + encodeURIComponent(txt) + '" target="_blank" rel="noopener">ابعت الدعوة على واتساب</a>'
-      + '<div class="invs"><div><b>' + INV.invited + '</b><span>صحاب طلبوا بكودك</span></div><div><b>' + INV.delivered + '</b><span>طلباتهم اتسلمت</span></div><div><b>' + INV.available + '</b><span>خصم متاح ليك</span></div><div><b>' + INV.used + '</b><span>خصم اتستخدم</span></div></div>'
-      + '<div class="note">الخصم بيتسجل لما أول أوردر لصاحبك يتسلم، وبيتطبق تلقائي على توصيل طلبك الجاي (مرة لكل صديق). مينفعش تستخدم كودك لنفسك، وكل صديق ليه مرة واحدة بس.</div>';
+      + '<div class="invp"><div class="invpt">تقدّمك للتوصيل المجاني: <b>' + (INV.progress || 0) + ' من 3</b></div><div class="invbar"><i style="width:' + Math.round((INV.progress || 0) / 3 * 100) + '%"></i></div>' + (INV.available > 0 ? '<div class="invok">🎉 عندك ' + INV.available + ' توصيل مجاني، هيتطبق تلقائي على طلبك الجاي</div>' : '') + '</div>'
+      + '<div class="invs"><div><b>' + INV.invited + '</b><span>صحاب طلبوا بكودك</span></div><div><b>' + INV.delivered + '</b><span>طلباتهم اتسلمت</span></div><div><b>' + INV.available + '</b><span>توصيل مجاني متاح</span></div><div><b>' + INV.used + '</b><span>توصيل مجاني اتستخدم</span></div></div>'
+      + '<div class="note">كل صديق بيتحسب لما أول أوردر ليه يتسلم. كل 3 أصحاب = توصيل مجاني على طلبك الجاي، بيتطبق تلقائي. مينفعش تستخدم كودك لنفسك، وكل صديق ليه مرة واحدة بس.</div>';
   }
   if (!MYO.length) h += '<div class="sec" style="display:block;margin-top:22px"><span style="display:block;font-size:17px;color:#fff;font-weight:700">عندك كود من صديق؟</span></div><div style="display:flex;gap:8px"><input type="text" id="inv-code" dir="ltr" placeholder="مثال: QA1B2C3" value="' + esc(store.get('refcode', '')) + '" style="flex:1;padding:14px;border-radius:14px;border:1.5px solid #e1e8f2;font-size:16px;text-transform:uppercase"><button class="go" id="inv-save" type="button">حفظ</button></div><div class="note" id="inv-msg"></div>';
   view.innerHTML = h;

@@ -665,10 +665,10 @@ async function loadRef() {
   const r = await rpc('admin_ref_list', { p_pin: PIN }).catch(() => null);
   if (!r || !r.ok || !Array.isArray(r.data)) { box.innerHTML = '<div class="msg err">مشكلة في التحميل — جرّب تاني</div>'; return; }
   const L = r.data, ST = { new: 'جديد', confirmed: 'اتأكد', shipping: 'في الطريق', delivered: 'اتسلم', canceled: 'اتلغى' };
-  const ok = L.filter(x => x.order_status === 'delivered').length, used = L.filter(x => x.used_order).length;
-  box.innerHTML = `<div class="pgrid"><div class="pst"><span>دعوات اتسجلت</span><b>${L.length}</b></div><div class="pst"><span>طلبات صحاب اتسلمت</span><b>${ok}</b></div><div class="pst"><span>خصومات اتطبقت</span><b>${used}</b></div><div class="pst"><span>خصومات لسه متاحة</span><b>${ok - used}</b></div></div>
-  <div class="hint2" style="margin:0 4px 8px">الخصم = نص سعر التوصيل على الطلب الجاي لصاحب الكود، بعد ما أول طلب لصديقه يتسلم. بيتطبق تلقائي.</div>
-  <div class="pcard">${L.length ? L.map(x => `<div class="crow"><div class="cn">${esc(x.referrer_name || 'عميل')} <small>${esc(x.referrer)}</small> دعا ${esc(x.referee_name || 'صديق')} <small>${esc(x.referee)} · كود ${esc(x.code)} · طلب #${x.order_id} (${ST[x.order_status] || esc(x.order_status || '')})</small><small>${x.used_order ? '✅ الخصم اتطبق على طلب #' + x.used_order : (x.order_status === 'delivered' ? '🎁 الخصم متاح للطلب الجاي' : '⏳ مستني تسليم طلب الصديق')}</small></div></div>`).join('') : '<div class="hint2">لسه مفيش دعوات.</div>'}</div>`;
+  const ok = L.filter(x => x.order_status === 'delivered').length, used = L.filter(x => x.used_order).length, un = ok - used;
+  box.innerHTML = `<div class="pgrid"><div class="pst"><span>دعوات اتسجلت</span><b>${L.length}</b></div><div class="pst"><span>طلبات صحاب اتسلمت</span><b>${ok}</b></div><div class="pst"><span>توصيل مجاني اتطبق</span><b>${Math.floor(used / 3)}</b></div><div class="pst"><span>توصيل مجاني متاح</span><b>${Math.floor(un / 3)}</b></div></div>
+  <div class="hint2" style="margin:0 4px 8px">كل 3 دعوات ناجحة (أول طلب للصديق اتسلم) = توصيل مجاني على طلب جاي لصاحب الكود، بيتطبق تلقائي. الباقي لحد التوصيل الجاي: ${un % 3} من 3 (إجمالي كل العملاء).</div>
+  <div class="pcard">${L.length ? L.map(x => `<div class="crow"><div class="cn">${esc(x.referrer_name || 'عميل')} <small>${esc(x.referrer)}</small> دعا ${esc(x.referee_name || 'صديق')} <small>${esc(x.referee)} · كود ${esc(x.code)} · طلب #${x.order_id} (${ST[x.order_status] || esc(x.order_status || '')})</small><small>${x.used_order ? '✅ اتحسبت في توصيل مجاني على طلب #' + x.used_order : (x.order_status === 'delivered' ? '✔️ اتحسبت (مستنية تكمل 3)' : '⏳ مستني تسليم طلب الصديق')}</small></div></div>`).join('') : '<div class="hint2">لسه مفيش دعوات.</div>'}</div>`;
 }
 
 /* ===== آراء العملاء ===== */

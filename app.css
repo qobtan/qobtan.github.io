@@ -182,3 +182,5 @@ main{padding-top:18px}
 .rv-l{display:flex;flex-direction:column;gap:10px}
 .rv-c{background:#f6f8fb;border:1.5px solid #d9a93a;border-radius:18px;padding:13px 15px}
 .rv-c p{margin:7px 0;color:#14202e;font-size:15.5px;line-height:1.8;font-weight:600}.rv-c small{color:#4a5a6e;font-size:13px}
+
+.invp{background:#f6f8fb;border:1.5px solid #d9a93a;border-radius:18px;padding:14px;margin:10px 0}.invpt{font-size:15px;color:#0b2a4a;margin-bottom:8px}.invpt b{color:#0b2a4a;font-size:18px}.invbar{height:12px;border-radius:8px;background:#dde5f0;overflow:hidden}.invbar i{display:block;height:100%;background:linear-gradient(90deg,#d9a93a,#f5c945);border-radius:8px}.invok{margin-top:10px;font-weight:700;color:#0b2a4a;font-size:14px}
