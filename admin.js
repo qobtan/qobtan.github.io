@@ -25,14 +25,14 @@ async function checkPin(p) {
 
 
 function showSec(s) {
-  if (!['orders', 'products', 'profit', 'settings'].includes(s)) s = 'orders';
+  if (!['orders', 'products', 'profit', 'materials', 'settings'].includes(s)) s = 'orders';
   document.querySelectorAll('.tabsec').forEach(e => e.classList.toggle('on', e.id === 'sec-' + s));
   document.querySelectorAll('#bnav button').forEach(b => b.classList.toggle('on', b.dataset.sec === s));
   try { localStorage.setItem('admsec', s); } catch (e) {}
   window.scrollTo(0, 0);
 }
-document.querySelectorAll('#bnav button').forEach(b => b.addEventListener('click', () => { showSec(b.dataset.sec); if (b.dataset.sec === 'orders') loadOrders(); if (b.dataset.sec === 'profit') loadProfit(); }));
-function enterPanel() { $('#bnav').hidden = false; const s0 = (new URLSearchParams(location.search).get('tab')) || 'orders'; showSec(s0); if (s0 === 'profit') loadProfit(); }
+document.querySelectorAll('#bnav button').forEach(b => b.addEventListener('click', () => { showSec(b.dataset.sec); if (b.dataset.sec === 'orders') loadOrders(); if (b.dataset.sec === 'profit') loadProfit(); if (b.dataset.sec === 'materials') loadMats(); if (b.dataset.sec === 'products') loadStock(); }));
+function enterPanel() { $('#bnav').hidden = false; const s0 = (new URLSearchParams(location.search).get('tab')) || 'orders'; showSec(s0); if (s0 === 'profit') loadProfit(); if (s0 === 'materials') loadMats(); loadStock(); }
 
 // ===== الأرباح =====
 let PF = { orders: [], costs: {}, dcost: 0, per: 'today' };
@@ -69,7 +69,8 @@ function sumRange(from, to, statuses) {
 async function loadProfit() {
   const box = $('#profit');
   if (!box.dataset.ready) box.innerHTML = '<div class="hint2">بيحسب...</div>';
-  const [o, c] = await Promise.all([rpc('admin_list_orders', { p_pin: PIN }).catch(() => null), rpc('admin_get_costs', { p_pin: PIN }).catch(() => null)]);
+  const [o, c, mm] = await Promise.all([rpc('admin_list_orders', { p_pin: PIN }).catch(() => null), rpc('admin_get_costs', { p_pin: PIN }).catch(() => null), rpc('admin_get_materials', { p_pin: PIN }).catch(() => null)]);
+  PF.mats = mm && mm.ok && Array.isArray(mm.data) ? mm.data : [];
   if (!o || !o.ok || !Array.isArray(o.data) || !c || !c.ok || !c.data) { box.innerHTML = '<div class="msg err">مشكلة في تحميل الحسابات — جرّب تاني</div>'; return; }
   PF.orders = o.data; PF.costs = c.data.costs || {}; PF.dcost = +c.data.delivery_cost || 0;
   if (!(rows && rows.length)) { try { const pr = await api('/rest/v1/products?select=id,name,price&order=sort.asc'); rows = await pr.json(); } catch (e) {} }
@@ -97,11 +98,13 @@ function renderProfit() {
   const today = cairoDay(new Date()); const bars = [];
   let mx = 1; for (let i = 6; i >= 0; i--) { const k = addDays(today, -i); const s = sumRange(k, k, ['delivered']); bars.push([k, s.profit]); mx = Math.max(mx, Math.abs(s.profit)); }
   const dn = k => new Date(k + 'T12:00:00Z').toLocaleDateString('ar-EG', { weekday: 'short', timeZone: 'UTC' });
+  const matSpent = (PF.mats || []).filter(m => m.kind === 'buy' && String(m.day) >= from && String(m.day) <= to).reduce((s, m) => s + +m.price, 0);
   const top = Object.entries(done.prod).sort((x, y) => y[1] - x[1]).slice(0, 3);
   const chips = [['today', 'النهاردة'], ['yday', 'إمبارح'], ['week', 'آخر ٧ أيام'], ['month', 'الشهر ده']].map(f => `<button type="button" class="ochip ${per === f[0] ? 'on' : ''}" data-pf="${f[0]}">${f[1]}</button>`).join('');
   box.innerHTML = `<div class="pchips">${chips}</div>
   <div class="pv ${cls}"><div class="vt">${vt}</div><div class="vp">${egp(done.profit)}</div><div class="vs">${vs}</div>${cmp ? `<div class="vs" style="margin-top:6px">${cmp}</div>` : ''}</div>
   ${missingProducts.length ? `<div class="pwarn">⚠️ ناقص تكلفة ${missingProducts.length} منتج، فالمكسب مش دقيق. اكتب سعر الشراء لكل منتج من القسم اللي تحت.</div>` : ''}
+  ${matSpent ? `<div class="pwarn" style="background:#eef3fa;border-color:#c9d6e8;color:#0b2a4a">📦 اشتريت خامات في الفترة دي بـ ${egp(matSpent)}. المبلغ ده مش متخصوم من المكسب فوق عشان التكلفة متتحسبش مرتين. لو سعر شراء المنتج مش شامل الأكياس والعبوات، ضيفها على تكلفة المنتج.</div>` : ''}
   <div class="pgrid">
     <div class="pst"><span>المبيعات</span><b>${egp(done.sales)}</b></div>
     <div class="pst"><span>تكلفة البضاعة</span><b>${egp(done.cost)}</b></div>
@@ -154,11 +157,21 @@ async function load() {
   rows = await r.json();
   renderList();
 }
+let STK = {};
+async function loadStock() {
+  const r = await rpc('admin_get_stock', { p_pin: PIN }).catch(() => null);
+  if (r && r.ok && r.data && typeof r.data === 'object') STK = r.data;
+  if ($('#list')) renderList();
+}
+const stkOf = id => (STK[String(id)] === undefined ? null : +STK[String(id)]);
+function lowCount() { return (rows || []).filter(p => { const s = stkOf(p.id); return s !== null && s < 3; }).length; }
 function renderList() {
   const q = ($('#psearch').value || '').trim().toLowerCase();
   const list = rows.filter(p => !q || (p.name || '').toLowerCase().includes(q));
   $('#pcount').textContent = list.length + ' منتج';
-  $('#list').innerHTML = list.map(p => `<button class="pli" type="button" data-open="${p.id}"><img src="${esc(p.img || 'logo.jpg')}" alt=""><span class="pn">${esc(p.name)}${p.detail ? `<small>${esc(p.detail)}</small>` : ''}</span><b>${+p.price || 0} <em>ج</em></b><i>‹</i></button>`).join('') || '<div class="pempty">مفيش منتج بالاسم ده</div>';
+  const lc = lowCount(); const nb = $('#nblow'); if (nb) { nb.hidden = !lc; nb.textContent = lc; }
+  const lw = $('#lowwarn'); if (lw) { lw.hidden = !lc; lw.textContent = '⚠️ ' + lc + ' منتج المخزون بتاعه أقل من ٣ قطع: ' + (rows || []).filter(p => { const s = stkOf(p.id); return s !== null && s < 3; }).map(p => p.name).join('، '); }
+  $('#list').innerHTML = list.map(p => { const sk = stkOf(p.id); const low = sk !== null && sk < 3; return `<button class="pli ${low ? 'low' : ''}" type="button" data-open="${p.id}"><img src="${esc(p.img || 'logo.jpg')}" alt=""><span class="pn">${esc(p.name)}${p.detail ? `<small>${esc(p.detail)}</small>` : ''}<small class="stk ${low ? 'lowt' : ''}">${sk === null ? 'المخزون: مش مسجل' : (low ? '⚠️ ' : '') + 'المخزون: ' + sk + ' قطعة'}</small></span><b>${+p.price || 0} <em>ج</em></b><i>‹</i></button>`; }).join('') || '<div class="pempty">مفيش منتج بالاسم ده</div>';
 }
 function openEdit(id) {
   const p = rows.find(x => x.id === id); if (!p) return;
@@ -190,6 +203,8 @@ function card(p) {
   <input type="number" class="f-price" min="0" step="1" value="${+p.price || 0}">
   <label class="lbl">تفاصيل قصيرة (مثال: 4 لتر) — اختياري</label>
   <input type="text" class="f-detail" value="${esc(p.detail || '')}">
+  <label class="lbl">المخزون (عدد القطع الموجودة) — بيظهرلك إنت بس</label>
+  <input type="number" inputmode="numeric" min="0" step="1" class="f-stock" data-sid="${p.id}" value="${stkOf(p.id) === null ? '' : stkOf(p.id)}" placeholder="اكتب العدد اللي معاك">
   <label class="lbl">وصف المنتج</label>
   <textarea class="f-intro" rows="7" placeholder="اكتب وصف المنتج هنا. كل سطر هيظهر لوحده للعميل، وابدأ السطر بعلامة ✓ لو عايزه نقطة.">${esc(desc)}</textarea>
   <button class="abtn" type="button" data-act="save">حفظ التعديلات</button>
@@ -410,3 +425,58 @@ $('#savevf').onclick = async () => { const m = $('#vfmsg'); const v = $('#vfval'
 
 setInterval(() => { try { if (!$('#panel').hidden && !(document.activeElement && /SELECT|INPUT|TEXTAREA/.test(document.activeElement.tagName)) && document.visibilityState === 'visible') loadOrders(); } catch (e) {} }, 30000);
 document.addEventListener('visibilitychange', () => { try { if (document.visibilityState === 'visible' && !$('#panel').hidden) loadOrders(); } catch (e) {} });
+
+document.addEventListener('change', async e => {
+  const el = e.target; if (!el.classList || !el.classList.contains('f-stock')) return;
+  const v = el.value === '' ? null : Math.floor(+el.value); if (v === null || isNaN(v) || v < 0) return;
+  const r = await rpc('admin_set_stock', { p_pin: PIN, p_id: +el.dataset.sid, p_qty: v }).catch(() => null);
+  if (r && r.ok && r.data === true) { STK[String(el.dataset.sid)] = v; el.style.borderColor = '#2bc16a'; } else el.style.borderColor = '#d93025';
+});
+
+/* ===== الخامات ===== */
+let MAT = [];
+const todayK = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' });
+async function loadMats() {
+  const r = await rpc('admin_get_materials', { p_pin: PIN }).catch(() => null);
+  if (!r || !r.ok || !Array.isArray(r.data)) { $('#matbox').innerHTML = '<div class="msg err">مشكلة في التحميل — جرّب تاني</div>'; return; }
+  MAT = r.data; renderMats();
+}
+function matGroups() {
+  const g = {};
+  MAT.forEach(m => { const x = g[m.name] || (g[m.name] = { name: m.name, bought: 0, used: 0, spent: 0, log: [] }); if (m.kind === 'buy') { x.bought += +m.qty; x.spent += +m.price; } else x.used += +m.qty; x.log.push(m); });
+  return Object.values(g).sort((p, q) => (q.log[0].day + q.log[0].id).localeCompare(p.log[0].day + p.log[0].id));
+}
+const nf = n => (Math.round(n * 100) / 100).toLocaleString('en-US');
+function renderMats() {
+  const mk = todayK().slice(0, 7);
+  const total = MAT.filter(m => m.kind === 'buy').reduce((s, m) => s + +m.price, 0);
+  const month = MAT.filter(m => m.kind === 'buy' && String(m.day).slice(0, 7) === mk).reduce((s, m) => s + +m.price, 0);
+  const g = matGroups();
+  const names = g.map(x => `<option value="${esc(x.name)}">`).join('');
+  $('#matbox').innerHTML = `<div class="pgrid"><div class="pst"><span>صرفت على الخامات الشهر ده</span><b>${egp(month)}</b></div><div class="pst"><span>إجمالي اللي صرفته</span><b>${egp(total)}</b></div></div>
+  <details class="pcard matform" id="matform"><summary>+ تسجيل شراء خامة جديد</summary>
+    <label class="lbl">اسم الخامة (مثال: أكياس، عبوات فاضية، جراكن)</label><input type="text" id="m-name" list="m-names" autocomplete="off"><datalist id="m-names">${names}</datalist>
+    <label class="lbl">العدد اللي جبته</label><input type="number" inputmode="decimal" min="0" id="m-qty">
+    <label class="lbl">دفعت كام (الإجمالي بالجنيه)</label><input type="number" inputmode="decimal" min="0" id="m-price">
+    <label class="lbl">التاريخ</label><input type="date" id="m-day" value="${todayK()}">
+    <label class="lbl">اسم المورّد — اختياري</label><input type="text" id="m-sup">
+    <button class="abtn" type="button" id="m-save">حفظ الشراء</button><div class="msg" id="m-msg"></div>
+  </details>
+  ${g.length ? g.map(x => { const rem = x.bought - x.used; return `<div class="pcard mat"><div class="mh"><b>${esc(x.name)}</b><span class="mrem ${rem <= 0 ? 'zero' : ''}">فاضل ${nf(rem)}</span></div>
+    <div class="msub">اشتريت ${nf(x.bought)} · استخدمت ${nf(x.used)} · صرفت ${egp(x.spent)}${x.bought ? ' · متوسط ' + egp(x.spent / x.bought) + ' للواحد' : ''}</div>
+    <div class="muse"><input type="number" inputmode="decimal" min="0" placeholder="استخدمت كام؟" data-mu="${esc(x.name)}"><button type="button" class="abtn sec" data-muse="${esc(x.name)}">− استخدمت</button><button type="button" class="abtn" data-mbuy="${esc(x.name)}">+ شراء</button></div>
+    <details class="mlog"><summary>السجل (${x.log.length})</summary>${x.log.map(m => `<div class="crow"><div class="cn">${m.kind === 'buy' ? '➕ اشتريت ' : '➖ استخدمت '}${nf(+m.qty)}${m.kind === 'buy' ? ' بـ ' + egp(+m.price) : ''}<small>${esc(String(m.day))}${m.supplier ? ' · ' + esc(m.supplier) : ''}</small></div><button type="button" class="mdel" data-mdel="${m.id}">✕</button></div>`).join('')}</details></div>`; }).join('') : '<div class="pempty">لسه مسجلتش أي خامة. دوس "تسجيل شراء خامة جديد".</div>'}`;
+}
+async function matAdd(name, kind, qty, price, sup, day, msg) {
+  if (!name || !(qty > 0)) { if (msg) { msg.className = 'msg err'; msg.textContent = 'اكتب الاسم والعدد'; } return false; }
+  const r = await rpc('admin_add_material', { p_pin: PIN, p_name: name, p_kind: kind, p_qty: qty, p_price: price || 0, p_supplier: sup || '', p_day: day || todayK() }).catch(() => null);
+  if (r && r.ok && r.data === true) { await loadMats(); return true; }
+  if (msg) { msg.className = 'msg err'; msg.textContent = 'فشل الحفظ — جرّب تاني'; } return false;
+}
+document.addEventListener('click', async e => {
+  const t = e.target; if (!t.closest) return;
+  if (t.id === 'm-save') { await matAdd($('#m-name').value.trim(), 'buy', +$('#m-qty').value, +$('#m-price').value, $('#m-sup').value.trim(), $('#m-day').value, $('#m-msg')); return; }
+  const u = t.closest('[data-muse]'); if (u) { const n = u.dataset.muse; const inp = [...document.querySelectorAll('[data-mu]')].find(i => i.dataset.mu === n); const q = +inp.value; if (!(q > 0)) { inp.style.borderColor = '#d93025'; return; } u.disabled = true; await matAdd(n, 'use', q, 0, '', todayK()); return; }
+  const b = t.closest('[data-mbuy]'); if (b) { const f = $('#matform'); f.open = true; $('#m-name').value = b.dataset.mbuy; f.scrollIntoView({ behavior: 'smooth' }); $('#m-qty').focus(); return; }
+  const d = t.closest('[data-mdel]'); if (d) { if (!confirm('تمسح السطر ده؟')) return; const r = await rpc('admin_del_material', { p_pin: PIN, p_id: +d.dataset.mdel }).catch(() => null); if (r && r.ok) loadMats(); }
+});
