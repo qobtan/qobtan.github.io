@@ -207,6 +207,8 @@ async function placeOrder(btn) {
     const r = await fetch(SUPA_URL + '/rest/v1/rpc/place_order_v2', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' },
       body: JSON.stringify({ p_name: info.name.trim(), p_phone: info.phone.trim(), p_address: info.address.trim(), p_city: 'الفيوم', p_payment: PAY, p_items: items, p_total: grand() }) });
     const res = await r.json();
+    if (!r.ok && res && /not registered/.test(res.message || '')) { store.set('reg', null); location.reload(); return; }
+    if (!r.ok && res && /too many/.test(res.message || '')) { const er = new Error('lim'); er.lim = 1; throw er; }
     const id = res && res.id;
     if (!r.ok || typeof id !== 'number' || !res.token) throw new Error('x');
     MYO = MYO.filter(o => o.id !== id); MYO.unshift({ id: id, token: res.token }); store.set('myorders', MYO); MYDATA = null;
@@ -216,7 +218,7 @@ async function placeOrder(btn) {
     JUST = { id: id, gt: gt, pay: payP, askPush: false }; if (canPush()) { if (Notification.permission === 'granted') pushSave({ id: id, token: res.token }).catch(() => {}); else if (Notification.permission === 'default') JUST.askPush = true; } tab = 'orders'; det = null; render(); scrollTo(0, 0); loadMyOrders();
   } catch (err) {
     btn.disabled = false; btn.textContent = 'ابعت الطلب';
-    msg.style.color = '#b3261e'; msg.innerHTML = 'مفيش اتصال أو حصلت مشكلة. جرّب تاني، أو ابعت الطلب على واتساب: <a href="' + waLink() + '" target="_blank" rel="noopener" style="color:#1a9a52;font-weight:700">واتساب</a>';
+    msg.style.color = '#b3261e'; if (err && err.lim) { msg.innerHTML = 'عندك طلبات لسه مستنية تأكيد أو وصلت الحد اليومي. استنى لما نكلمك أو كلمنا على واتساب.'; return; } msg.innerHTML = 'مفيش اتصال أو حصلت مشكلة. جرّب تاني، أو ابعت الطلب على واتساب: <a href="' + waLink() + '" target="_blank" rel="noopener" style="color:#1a9a52;font-weight:700">واتساب</a>';
   }
 }
 document.addEventListener('click', e => {
@@ -451,15 +453,15 @@ function loadRevData() {
   const go = async () => {
     const nm = g.querySelector('#r-name').value.trim(); let ph = g.querySelector('#r-phone').value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\D/g, ''); if (ph.startsWith('20')) ph = '0' + ph.slice(2);
     if (nm.length < 2) { msg.textContent = 'اكتب اسمك'; return; }
-    if (!/^01[0-9]{9}$/.test(ph)) { msg.textContent = 'اكتب رقم موبايل مصري صح (11 رقم بيبدأ بـ 01)'; return; }
+    if (!/^01[0125][0-9]{8}$/.test(ph)) { msg.textContent = 'اكتب رقم موبايل مصري صح (11 رقم بيبدأ بـ 01)'; return; }
     const ag = parseInt(g.querySelector('#r-age').value); if (!(ag >= 5 && ag <= 100)) { msg.textContent = 'اكتب سنك (رقم من 5 لـ 100)'; return; }
     if (!GN) { msg.textContent = 'اختار ذكر ولا أنثى'; return; }
     const b = g.querySelector('#r-go'); b.disabled = true; b.textContent = 'ثانية...'; msg.textContent = '';
     try {
       const r = await fetch(SUPA_URL + '/rest/v1/rpc/app_register', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_name: nm, p_phone: ph, p_did: localStorage.getItem('did') || '', p_age: ag, p_gender: GN, p_photo: PH }) });
-      if (!r.ok) throw new Error('x');
+      if (!r.ok) { let m = ''; try { m = (await r.json()).message || ''; } catch (e2) {} const er = new Error('x'); er.m = m; throw er; }
       store.set('reg', { name: nm, phone: ph, age: ag, gender: GN }); info.name = nm; info.phone = ph; store.set('info', info); g.remove(); render(true);
-    } catch (e) { b.disabled = false; b.textContent = 'سجّل وادخل'; msg.textContent = 'مفيش اتصال، جرّب تاني'; }
+    } catch (e) { b.disabled = false; b.textContent = 'سجّل وادخل'; msg.textContent = /phone exists/.test(e.m || '') ? 'الرقم ده مسجل قبل كده من جهاز تاني. كلمنا على واتساب 01028540358' : /device limit/.test(e.m || '') ? 'الجهاز ده سجّل أكتر من رقم. كلمنا على واتساب 01028540358' : /bad/.test(e.m || '') ? 'راجع البيانات واكتبها صح' : 'مفيش اتصال، جرّب تاني'; }
   };
   g.querySelector('#r-go').addEventListener('click', go);
   g.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
