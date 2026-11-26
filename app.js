@@ -515,6 +515,23 @@ function loadRevData() {
 
 /* شات خدمة العملاء */
 (function () {
+const VREC = {
+  mime() { const c = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm', 'audio/ogg;codecs=opus']; for (const m of c) { try { if (window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m; } catch (e) {} } return ''; },
+  async start(onTick, onEnd) {
+    if (!navigator.mediaDevices || !window.MediaRecorder) throw new Error('nosupport');
+    const st = await navigator.mediaDevices.getUserMedia({ audio: true }); const mt = VREC.mime(); let rec; try { rec = new MediaRecorder(st, mt ? { mimeType: mt, audioBitsPerSecond: 24000 } : { audioBitsPerSecond: 24000 }); } catch (e) { rec = new MediaRecorder(st); }
+    const parts = []; const t0 = Date.now(); let cancel = false, done = false;
+    rec.ondataavailable = e => { if (e.data && e.data.size) parts.push(e.data); };
+    const tick = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); onTick(s); if (s >= 60) fin(false); }, 250);
+    const fin = c => { if (done) return; done = true; cancel = c; clearInterval(tick); try { rec.stop(); } catch (e) {} };
+    rec.onstop = () => { st.getTracks().forEach(t => t.stop()); if (cancel) return; const dur = Math.max(1, Math.min(60, Math.round((Date.now() - t0) / 1000))); const bl = new Blob(parts, { type: (rec.mimeType || mt || 'audio/webm') }); const fr = new FileReader(); fr.onload = () => { const u = String(fr.result), i = u.indexOf(','); let m = (u.slice(5, u.indexOf(';')) || 'audio/webm').split(';')[0]; onEnd({ data: u.slice(i + 1), mime: m, dur }); }; fr.readAsDataURL(bl); };
+    rec.start(); return { stop: () => fin(false), cancel: () => fin(true) };
+  },
+  fmt(s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); },
+  btn(x) { const m = /^v:(\d+)$/.exec(x.b); return m ? '<button type="button" class="vp" data-vid="' + x.id + '"><b>▶</b><u></u><small>' + VREC.fmt(+m[1]) + '</small></button>' : null; },
+  async play(b, getter) { if (b._a && !b._a.paused) { b._a.pause(); b.firstChild.textContent = '▶'; return; } if (!b._a) { b.firstChild.textContent = '…'; let r = null; try { r = await getter(b.dataset.vid); } catch (e) {} if (!r || !r.ok) { b.firstChild.textContent = '✕'; b.querySelector('small').textContent = 'الصوت اتمسح'; return; } b._a = new Audio('data:' + r.mime + ';base64,' + r.data); const a = b._a; a.onended = () => { b.firstChild.textContent = '▶'; b.querySelector('u').style.setProperty('--w','0'); }; a.ontimeupdate = () => { if (a.duration) b.querySelector('u').style.setProperty('--w',(a.currentTime / a.duration * 100) + '%'); }; } b._a.play().then(() => { b.firstChild.textContent = '⏸'; }).catch(() => { b.firstChild.textContent = '▶'; }); }
+};
+
   const rpcC = async (fn, b) => { const r = await fetch(SUPA_URL + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ p_phone: (store.get('reg', {}) || {}).phone, p_did: localStorage.getItem('did') || '' }, b)) }); let d = null; try { d = await r.json(); } catch (e) {} if (!r.ok) throw new Error((d && d.message) || 'x'); return d; };
   let box = null, timer = null, last = '';
   const hm = s => new Date(s).toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit' });
@@ -523,13 +540,20 @@ function loadRevData() {
   window.openChat = () => {
     if (!(store.get('reg', null))) return; last = '';
     box = document.createElement('div'); box.id = 'chat';
-    box.innerHTML = '<div class="ch-h"><button type="button" id="ch-x">›</button><b>🎧 خدمة العملاء</b></div><div id="ch-list"></div><div class="ch-f"><textarea id="ch-t" rows="1" placeholder="اكتب رسالتك..." maxlength="1000"></textarea><button type="button" id="ch-s">إرسال</button></div>';
+    box.innerHTML = '<div class="ch-h"><button type="button" id="ch-x">›</button><b>🎧 خدمة العملاء</b></div><div id="ch-list"></div><div class="ch-f"><textarea id="ch-t" rows="1" placeholder="اكتب رسالتك..." maxlength="1000"></textarea><button type="button" id="ch-m" aria-label="رسالة صوتية">🎤</button><button type="button" id="ch-s">إرسال</button></div><div class="ch-r" hidden><button type="button" id="ch-rc">🗑</button><span id="ch-rt">0:00</span><em>● بيسجّل...</em><button type="button" id="ch-rs">إرسال ➤</button></div>';
     document.body.appendChild(box); document.body.style.overflow = 'hidden';
-    const close = () => { clearInterval(timer); box.remove(); document.body.style.overflow = ''; box = null; };
+    const close = () => { clearInterval(timer); if (typeof rc !== 'undefined' && rc) rc.cancel(); box.querySelectorAll('.vp').forEach(b => { if (b._a) b._a.pause(); }); box.remove(); document.body.style.overflow = ''; box = null; };
     box.querySelector('#ch-x').onclick = close;
     const send = async () => { const t = box.querySelector('#ch-t'), v = t.value.trim(); if (!v) return; const b = box.querySelector('#ch-s'); b.disabled = true; try { await rpcC('chat_send', { p_body: v }); t.value = ''; await pull(); } catch (e) { alert(/too many/.test(e.message) ? 'رسايل كتير. استنى شوية.' : /not allowed/.test(e.message) ? 'مش قادر أبعت من الجهاز ده.' : 'مفيش اتصال، جرّب تاني'); } b.disabled = false; };
     box.querySelector('#ch-s').onclick = send;
     box.querySelector('#ch-t').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+
+    let rc = null; const f = box.querySelector('.ch-f'), rr = box.querySelector('.ch-r');
+    const showR = on => { f.hidden = on; rr.hidden = !on; };
+    box.querySelector('#ch-m').onclick = async () => { try { rc = await VREC.start(s => { box.querySelector('#ch-rt').textContent = VREC.fmt(s); }, async v => { try { await rpcC('chat_send_voice', { p_data: v.data, p_mime: v.mime, p_dur: v.dur }); await pull(); } catch (e) { alert(/too many/.test(e.message) ? 'وصلت للحد اليومي للرسايل الصوتية. اكتب رسالتك.' : /not allowed/.test(e.message) ? 'مش قادر أبعت من الجهاز ده.' : 'الصوت ماتبعتش، جرّب تاني'); } showR(false); }); box.querySelector('#ch-rt').textContent = '0:00'; showR(true); } catch (e) { alert(/Permission|NotAllowed|denied/i.test(String(e && (e.name || e.message))) ? 'لازم تسمح للتطبيق بالمايك عشان تسجّل صوت (من إعدادات الموبايل لو رفضت قبل كده).' : 'التسجيل مش شغال على الجهاز ده. اكتب رسالتك.'); } };
+    box.querySelector('#ch-rc').onclick = () => { if (rc) rc.cancel(); rc = null; showR(false); };
+    box.querySelector('#ch-rs').onclick = () => { if (rc) { box.querySelector('#ch-rs').disabled = true; rc.stop(); rc = null; setTimeout(() => { box.querySelector('#ch-rs') && (box.querySelector('#ch-rs').disabled = false); }, 3000); } };
+    box.addEventListener('click', e => { const b = e.target.closest('.vp'); if (b) VREC.play(b, id => rpcC('chat_audio_get', { p_id: +id })); });
     pull(); timer = setInterval(() => { if (document.hidden) return; pull(); }, 5000);
   };
   const unread = async () => { if (!(store.get('reg', null))) return; try { const n = await rpcC('chat_unread', {}); const h = document.querySelector('#hb'); if (h) h.classList.toggle('dot', n > 0); window.__cu = n; const c = document.querySelector('#mn-cu'); if (c) { c.textContent = n; c.hidden = !n; } } catch (e) {} };
