@@ -40,7 +40,7 @@ function ctl(p, isDet) {
   if (p.opts) {
     if (!isDet) { const n = pq(p); return `<button class="add" data-open="${p.id}">${n ? 'في السلة (' + n + ') ‹' : 'اختار ' + esc(p.opts.title)}</button>`; }
     const k = SEL ? ck(p, SEL) : '', n = k ? (cart[k] || 0) : 0;
-    const chips = `<div class="opts"><div class="ot">${esc(p.opts.title)} <i>(لازم تختار)</i></div><div class="och">${p.opts.choices.map(c => `<button type="button" class="chip${SEL === c ? ' on' : ''}" data-sel="${esc(c)}">${esc(c)}</button>`).join('')}</div></div>`;
+    const chips = `<div class="opts"><div class="ot">${esc(p.opts.title)} <i>(لازم تختار)</i></div><div class="och">${p.opts.choices.map(c => `<button type="button" class="optc${SEL === c ? ' on' : ''}" data-sel="${esc(c)}">${esc(c)}</button>`).join('')}</div></div>`;
     return chips + (!SEL ? `<button class="add dis" type="button" disabled>اختار ${esc(p.opts.title)} الأول</button>` : n === 0 ? `<button class="add" data-add="${esc(k)}">أضف للسلة</button>` : `<div class="step"><button data-dec="${esc(k)}" aria-label="نقص">−</button><bdi>${n}</bdi><button data-inc="${esc(k)}" aria-label="زود">+</button></div>`);
   }
   const n = cart[p.id] || 0;

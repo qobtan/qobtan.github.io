@@ -285,6 +285,6 @@ html,body{background:#0b141a !important}
 
 /* v88: product options */
 .opts{margin:14px 0 6px}.opts .ot{font-weight:800;font-size:15px;color:#fff;margin-bottom:8px}.opts .ot i{font-style:normal;font-weight:600;font-size:12px;color:#f9e08f}
-.och{display:flex;flex-wrap:wrap;gap:8px}.chip{border:1.5px solid #3a4a54;background:#111b21;color:#e9edef;border-radius:20px;padding:10px 16px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer}
-.chip.on{background:linear-gradient(135deg,#f9e08f,#d9a93a);color:#0b2a4a;border-color:#d9a93a}
+.och{display:flex;flex-wrap:wrap;gap:8px}.optc{border:1.5px solid #3a4a54;background:#111b21;color:#e9edef;border-radius:20px;padding:10px 16px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer}
+.optc.on{background:linear-gradient(135deg,#f9e08f,#d9a93a);color:#0b2a4a;border-color:#d9a93a}
 .add.dis{opacity:.45;box-shadow:none}.lo{color:#f9e08f !important;font-weight:700}
