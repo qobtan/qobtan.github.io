@@ -335,3 +335,5 @@ html,body{background:#0b141a !important}
 #chat .ch-f{display:flex;gap:8px;padding:10px 10px calc(env(safe-area-inset-bottom) + 10px);background:#1f2c34}
 #chat textarea{flex:1;resize:none;border:0;border-radius:20px;background:#0b141a;color:#fff;padding:11px 14px;font:inherit;max-height:100px}
 #chat .ch-f button{border:0;border-radius:20px;padding:0 18px;background:linear-gradient(135deg,#f6d77b,#d9a93a);color:#0b2a4a;font:inherit;font-weight:800}
+#mn .mn-av{overflow:visible !important}#mn .mn-av img{border-radius:50%}
+#mn .mn-av em{right:-16px !important;bottom:2px !important;width:32px !important;height:32px !important;font-size:17px !important;border:3px solid #111b21;box-shadow:0 2px 6px rgba(0,0,0,.5)}
