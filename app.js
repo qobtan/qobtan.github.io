@@ -403,7 +403,7 @@ function revHtml() {
 }
 function fillImgs() { document.querySelectorAll('#revs img[data-rid]').forEach(im => { const id = im.dataset.rid; if (IMGD[id]) { if (!im.src) im.src = IMGD[id]; return; } if (im.dataset.ld) return; im.dataset.ld = 1; rp('get_review_img', { p_id: +id }).then(v => { if (typeof v === 'string' && v) { IMGD[id] = v; im.src = v; } }); }); }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-rimg]'); if (!b) return; const src = IMGD[b.dataset.rimg] || (b.querySelector('img') || {}).src; if (!src) return; const o = document.createElement('div'); o.setAttribute('style', 'position:fixed;inset:0;z-index:99999;background:rgba(7,27,49,.94);display:flex;align-items:center;justify-content:center;padding:12px;cursor:zoom-out'); o.innerHTML = '<img src="' + src + '" style="max-width:100%;max-height:100%;border-radius:12px;box-shadow:0 0 0 2px #d9a93a">'; o.onclick = () => o.remove(); document.body.appendChild(o); });
-function syncRevTab() { const b = document.querySelector('.tabs [data-tab=reviews]'); if (!b) return; const has = !!((REVS && REVS.count) || (IMGS && IMGS.length)); b.hidden = !has; if (!has && tab === 'reviews') { tab = 'shop'; render(); } }
+function syncRevTab() { const b = document.querySelector('#m-rev'); if (!b) return; const has = !!((REVS && REVS.count) || (IMGS && IMGS.length)); b.hidden = !has; if (!has && tab === 'reviews') { tab = 'shop'; render(); } }
 function reviewsView() { view.innerHTML = '<div id="revs">' + (revHtml() || '<div class="empty">لسه مفيش آراء.</div>') + '</div>'; fillImgs(); }
 function loadRevData() {
   if (loadRevData.busy) return; loadRevData.busy = true; let n = 2; const done = () => { if (--n === 0) loadRevData.busy = false; };
@@ -441,7 +441,7 @@ function loadRevData() {
   g.innerHTML = `<div class="rbox"><img src="logo.jpg" alt=""><h2>أهلاً بيك في منظفات القبطان</h2><p>سجّل اسمك ورقمك مرة واحدة وكمّل طلبك</p>
   <input type="text" id="r-name" placeholder="الاسم" autocomplete="name" value="${esc(info.name || '')}">
   <input type="tel" id="r-phone" placeholder="رقم التليفون (01xxxxxxxxx)" autocomplete="tel" inputmode="numeric" value="${esc(info.phone || '')}">
-  <input type="number" id="r-age" placeholder="السن" inputmode="numeric" min="5" max="100">
+  <label class="r-dl">تاريخ الميلاد</label><input type="date" id="r-age" min="1920-01-01">
   <div id="r-g"><button type="button" data-g="ذكر">👨 ذكر</button><button type="button" data-g="أنثى">👩 أنثى</button></div>
   <label id="r-pl"><span id="r-pv">📷</span> صورتك (اختياري)<input type="file" id="r-photo" accept="image/*" hidden></label>
   <button type="button" id="r-go">سجّل وادخل</button><div id="r-msg"></div>
@@ -455,15 +455,35 @@ function loadRevData() {
     const nm = g.querySelector('#r-name').value.trim(); let ph = g.querySelector('#r-phone').value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\D/g, ''); if (ph.startsWith('20')) ph = '0' + ph.slice(2);
     if (nm.length < 2) { msg.textContent = 'اكتب اسمك'; return; }
     if (!/^01[0125][0-9]{8}$/.test(ph)) { msg.textContent = 'اكتب رقم موبايل مصري صح (11 رقم بيبدأ بـ 01)'; return; }
-    const ag = parseInt(g.querySelector('#r-age').value); if (!(ag >= 5 && ag <= 100)) { msg.textContent = 'اكتب سنك (رقم من 5 لـ 100)'; return; }
+    const dob = g.querySelector('#r-age').value; const ag = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / 31557600000) : 0; if (!(ag >= 5 && ag <= 100)) { msg.textContent = 'اكتب تاريخ ميلادك صح'; return; }
     if (!GN) { msg.textContent = 'اختار ذكر ولا أنثى'; return; }
     const b = g.querySelector('#r-go'); b.disabled = true; b.textContent = 'ثانية...'; msg.textContent = '';
     try {
-      const r = await fetch(SUPA_URL + '/rest/v1/rpc/app_register', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_name: nm, p_phone: ph, p_did: localStorage.getItem('did') || '', p_age: ag, p_gender: GN, p_photo: PH }) });
+      const r = await fetch(SUPA_URL + '/rest/v1/rpc/app_register', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_name: nm, p_phone: ph, p_did: localStorage.getItem('did') || '', p_dob: dob, p_gender: GN, p_photo: PH }) });
       if (!r.ok) { let m = ''; try { m = (await r.json()).message || ''; } catch (e2) {} const er = new Error('x'); er.m = m; throw er; }
     } catch (e) { b.disabled = false; b.textContent = 'سجّل وادخل'; msg.textContent = /phone exists/.test(e.m || '') ? 'الرقم ده مسجل قبل كده. 🎧 لو في مشكلة في الدخول كلم خدمة العملاء على واتساب 01028540358 (الزرار تحت) 🎧' : /device limit/.test(e.m || '') ? 'الجهاز ده سجّل أكتر من رقم. 🎧 كلمنا على واتساب 01028540358' : /bad/.test(e.m || '') ? 'راجع البيانات واكتبها صح' : 'مفيش اتصال، جرّب تاني'; return; }
-    store.set('reg', { name: nm, phone: ph, age: ag, gender: GN }); info.name = nm; info.phone = ph; store.set('info', info); g.remove(); try { render(true); } catch (e3) {}
+    try { if (PH) localStorage.setItem('regphoto', PH); } catch (e4) {} store.set('reg', { name: nm, phone: ph, dob: dob, gender: GN }); info.name = nm; info.phone = ph; store.set('info', info); g.remove(); try { render(true); } catch (e3) {}
   };
   g.querySelector('#r-go').addEventListener('click', go);
   g.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+})();
+
+/* قايمة الحساب ☰ */
+(function () {
+  const hero = document.querySelector('.hero'); if (!hero) return;
+  const hb = document.createElement('button'); hb.id = 'hb'; hb.type = 'button'; hb.setAttribute('aria-label', 'القايمة'); hb.innerHTML = '<i></i><i></i><i></i>'; hero.appendChild(hb);
+  const mn = document.createElement('div'); mn.id = 'mn'; mn.hidden = true; document.body.appendChild(mn);
+  const open = () => {
+    const r = store.get('reg', {}) || {}; let ph = ''; try { ph = localStorage.getItem('regphoto') || ''; } catch (e) {}
+    const av = /^data:image\//.test(ph) ? '<img src="' + esc(ph) + '" alt="">' : '<span>' + esc((r.name || '👤').trim().charAt(0)) + '</span>';
+    let age = ''; if (r.dob) { const n = Math.floor((Date.now() - new Date(r.dob).getTime()) / 31557600000); if (n > 0) age = ' (' + n + ' سنة)'; }
+    const rows = [['📞', r.phone], ['⚧', r.gender], ['🎂', r.dob ? r.dob + age : '']].filter(x => x[1]).map(x => '<div>' + x[0] + ' <b>' + esc(String(x[1])) + '</b></div>').join('');
+    const rv = document.querySelector('#m-rev-flag'); const hasRev = !!((REVS && REVS.count) || (IMGS && IMGS.length));
+    mn.innerHTML = '<div class="mn-bg" data-mclose="1"></div><div class="mn-p"><div class="mn-acc"><div class="mn-av">' + av + '</div><div class="mn-nm">' + esc(r.name || 'حسابي') + '</div><div class="mn-inf">' + rows + '</div></div>'
+      + '<button type="button" data-tab="invite" data-mclose="1">🎁 دعوة صحابك</button>' + (hasRev ? '<button type="button" id="m-rev" data-tab="reviews" data-mclose="1">⭐ آراء العملاء</button>' : '')
+      + '<button type="button" class="mn-x" data-mclose="1">إغلاق</button></div>';
+    mn.hidden = false;
+  };
+  hb.addEventListener('click', open);
+  mn.addEventListener('click', e => { if (e.target.closest('[data-mclose]')) setTimeout(() => { mn.hidden = true; }, 0); });
 })();
