@@ -438,16 +438,17 @@ function loadRevData() {
 (function () {
   if (store.get('reg', null)) return;
   const g = document.createElement('div'); g.id = 'reg';
-  g.innerHTML = `<div class="rbox"><img src="logo.jpg" alt=""><h2>أهلاً بيك في منظفات القبطان</h2><p>سجّل اسمك ورقمك مرة واحدة وكمّل طلبك</p>
-  <input type="text" id="r-name" placeholder="الاسم" autocomplete="name" value="${esc(info.name || '')}">
+  g.innerHTML = `<div class="rbox"><img src="logo.jpg" alt=""><h2>أهلاً بيك في منظفات القبطان</h2><p class="rg">سجّل اسمك ورقمك مرة واحدة وكمّل طلبك</p><p class="rsb">ادخل برقمك وتاريخ ميلادك وهنرجّعلك حسابك</p>
+  <input class="rg" type="text" id="r-name" placeholder="الاسم" autocomplete="name" value="${esc(info.name || '')}">
   <input type="tel" id="r-phone" placeholder="رقم التليفون (01xxxxxxxxx)" autocomplete="tel" inputmode="numeric" value="${esc(info.phone || '')}">
   <label class="r-dl">تاريخ الميلاد</label><input type="date" id="r-age" min="1920-01-01">
-  <div id="r-g"><button type="button" data-g="ذكر">👨 ذكر</button><button type="button" data-g="أنثى">👩 أنثى</button></div>
-  <label id="r-pl"><span id="r-pv">📷</span> صورتك (اختياري)<input type="file" id="r-photo" accept="image/*" hidden></label>
-  <button type="button" id="r-go">سجّل وادخل</button><div id="r-msg"></div>
+  <div id="r-g" class="rg"><button type="button" data-g="ذكر">👨 ذكر</button><button type="button" data-g="أنثى">👩 أنثى</button></div>
+  <label id="r-pl" class="rg"><span id="r-pv">📷</span> صورتك (اختياري)<input type="file" id="r-photo" accept="image/*" hidden></label>
+  <button type="button" id="r-go">سجّل وادخل</button><button type="button" id="r-rgo" class="rsb">ادخل لحسابي</button><div id="r-msg"></div><button type="button" id="r-sw" class="r-lnk">عندي حساب قبل كده</button>
   <div id="r-help">🎧 لو في مشكلة في الدخول كلم خدمة العملاء على واتساب 01028540358<a href="https://wa.me/201028540358" target="_blank" rel="noopener">💬 واتساب خدمة العملاء</a></div>
   <small>بياناتك بتستخدم لتوصيل طلباتك بس، ومش بنشاركها مع حد. <a href="privacy.html" target="_blank" rel="noopener">سياسة الخصوصية</a></small></div>`;
   document.body.appendChild(g);
+  const HW = () => { try { return (window.AndroidFCM && AndroidFCM.hwid) ? String(AndroidFCM.hwid() || '') : ''; } catch (e) { return ''; } };
   const msg = g.querySelector('#r-msg'); let PH = null, GN = '';
   g.querySelectorAll('#r-g button').forEach(b => b.addEventListener('click', () => { GN = b.dataset.g; g.querySelectorAll('#r-g button').forEach(x => x.classList.toggle('on', x === b)); }));
   g.querySelector('#r-photo').addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; const im = new Image(), rd = new FileReader(); rd.onload = () => { im.onload = () => { const s = 200, c = document.createElement('canvas'); c.width = c.height = s; const x = c.getContext('2d'), m = Math.min(im.width, im.height); x.drawImage(im, (im.width - m) / 2, (im.height - m) / 2, m, m, 0, 0, s, s); PH = c.toDataURL('image/jpeg', 0.72); const pv = g.querySelector('#r-pv'); pv.innerHTML = '<img src="' + PH + '" alt="">'; }; im.src = rd.result; }; rd.readAsDataURL(f); });
@@ -459,13 +460,32 @@ function loadRevData() {
     if (!GN) { msg.textContent = 'اختار ذكر ولا أنثى'; return; }
     const b = g.querySelector('#r-go'); b.disabled = true; b.textContent = 'ثانية...'; msg.textContent = '';
     try {
-      const r = await fetch(SUPA_URL + '/rest/v1/rpc/app_register', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_name: nm, p_phone: ph, p_did: localStorage.getItem('did') || '', p_dob: dob, p_gender: GN, p_photo: PH }) });
+      const r = await fetch(SUPA_URL + '/rest/v1/rpc/app_register', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_name: nm, p_phone: ph, p_did: localStorage.getItem('did') || '', p_dob: dob, p_gender: GN, p_photo: PH, p_hw: HW() }) });
       if (!r.ok) { let m = ''; try { m = (await r.json()).message || ''; } catch (e2) {} const er = new Error('x'); er.m = m; throw er; }
-    } catch (e) { b.disabled = false; b.textContent = 'سجّل وادخل'; msg.textContent = /phone exists/.test(e.m || '') ? 'الرقم ده مسجل قبل كده. 🎧 لو في مشكلة في الدخول كلم خدمة العملاء على واتساب 01028540358 (الزرار تحت) 🎧' : /device limit/.test(e.m || '') ? 'الجهاز ده سجّل أكتر من رقم. 🎧 كلمنا على واتساب 01028540358' : /bad/.test(e.m || '') ? 'راجع البيانات واكتبها صح' : 'مفيش اتصال، جرّب تاني'; return; }
+    } catch (e) { b.disabled = false; b.textContent = 'سجّل وادخل'; msg.textContent = /phone exists/.test(e.m || '') ? 'الرقم ده مسجل قبل كده. لو ده حسابك دوس «عندي حساب قبل كده» وادخل بتاريخ ميلادك. 🎧 ولو في مشكلة كلم خدمة العملاء على واتساب 01028540358' : /device limit/.test(e.m || '') ? 'الجهاز ده سجّل أكتر من رقم. 🎧 كلمنا على واتساب 01028540358' : /bad/.test(e.m || '') ? 'راجع البيانات واكتبها صح' : 'مفيش اتصال، جرّب تاني'; return; }
     try { if (PH) localStorage.setItem('regphoto', PH); } catch (e4) {} store.set('reg', { name: nm, phone: ph, dob: dob, gender: GN }); info.name = nm; info.phone = ph; store.set('info', info); g.remove(); try { render(true); } catch (e3) {}
   };
+  const sw = g.querySelector('#r-sw'), setRs = on => { g.classList.toggle('rs', on); sw.textContent = on ? 'مش عندي حساب، عايز أسجّل' : 'عندي حساب قبل كده'; msg.textContent = ''; };
+  sw.addEventListener('click', () => setRs(!g.classList.contains('rs')));
+  g._rs = setRs;
+  const rgo = async () => {
+    let ph = g.querySelector('#r-phone').value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\D/g, ''); if (ph.startsWith('20')) ph = '0' + ph.slice(2);
+    const dob = g.querySelector('#r-age').value;
+    if (!/^01[0125][0-9]{8}$/.test(ph)) { msg.textContent = 'اكتب رقم موبايل مصري صح (11 رقم بيبدأ بـ 01)'; return; }
+    if (!dob) { msg.textContent = 'اكتب تاريخ ميلادك'; return; }
+    const b = g.querySelector('#r-rgo'); b.disabled = true; b.textContent = 'ثانية...'; msg.textContent = '';
+    try {
+      const r = await fetch(SUPA_URL + '/rest/v1/rpc/app_restore', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_phone: ph, p_did: localStorage.getItem('did') || '', p_dob: dob, p_hw: HW() }) });
+      if (!r.ok) throw new Error('x'); const d = await r.json();
+      b.disabled = false; b.textContent = 'ادخل لحسابي';
+      if (!d || !d.ok) { msg.textContent = d && d.reason === 'locked' ? 'جرّبت كتير غلط. استنى ' + (d.mins || 60) + ' دقيقة وجرّب تاني، أو كلم خدمة العملاء على واتساب 01028540358' : d && d.reason === 'otherphone' ? 'الرقم ده مسجّل على موبايل تاني. لو غيّرت موبايلك كلم خدمة العملاء على واتساب 01028540358 وهنفعّله على موبايلك الجديد' : d && d.reason === 'device' ? 'الجهاز ده سجّل أكتر من رقم. 🎧 كلمنا على واتساب 01028540358' : 'الرقم أو تاريخ الميلاد مش مظبوط' + (d && d.left != null ? ' (فاضل ' + d.left + ' محاولات)' : '') + '. لو محتاج مساعدة كلم خدمة العملاء على واتساب 01028540358'; return; }
+      try { if (d.photo) localStorage.setItem('regphoto', d.photo); } catch (e4) {}
+      store.set('reg', { name: d.name, phone: d.phone, dob: d.dob, gender: d.gender }); info.name = d.name; info.phone = d.phone; store.set('info', info); g.remove(); try { render(true); } catch (e3) {}
+    } catch (e) { b.disabled = false; b.textContent = 'ادخل لحسابي'; msg.textContent = 'مفيش اتصال، جرّب تاني'; }
+  };
+  g.querySelector('#r-rgo').addEventListener('click', rgo);
   g.querySelector('#r-go').addEventListener('click', go);
-  g.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+  g.addEventListener('keydown', e => { if (e.key === 'Enter') (g.classList.contains('rs') ? rgo : go)(); });
 })();
 
 /* قايمة الحساب ☰ */
@@ -520,3 +540,6 @@ function loadRevData() {
   unread(); setInterval(() => { if (!document.hidden) unread(); }, 45000);
   document.addEventListener('click', e => { if (e.target.closest('#hb')) setTimeout(() => { const c = document.querySelector('#mn-cu'); if (c && window.__cu) { c.textContent = window.__cu; c.hidden = false; } }, 30); });
 })();
+
+/* فتح واتساب والاتصال برّه التطبيق (target=_blank جوه الـ APK) */
+document.addEventListener('click', e => { const a = e.target && e.target.closest && e.target.closest('a[href]'); if (!a) return; const h = a.getAttribute('href') || ''; if (/^(https?:\/\/(wa\.me|api\.whatsapp\.com)|whatsapp:|tel:|mailto:)/i.test(h)) { e.preventDefault(); location.href = h; } }, true);
