@@ -444,7 +444,7 @@ function loadRevData() {
   <label class="r-dl">تاريخ الميلاد</label><input type="date" id="r-age" min="1920-01-01">
   <div id="r-g" class="rg"><button type="button" data-g="ذكر">👨 ذكر</button><button type="button" data-g="أنثى">👩 أنثى</button></div>
   <label id="r-pl" class="rg"><span id="r-pv">📷</span> صورتك (اختياري)<input type="file" id="r-photo" accept="image/*" hidden></label>
-  <button type="button" id="r-go">سجّل وادخل</button><button type="button" id="r-rgo" class="rsb">ادخل لحسابي</button><div id="r-msg"></div><button type="button" id="r-sw" class="r-lnk">عندي حساب قبل كده</button>
+  <button type="button" id="r-go" class="rg">سجّل وادخل</button><button type="button" id="r-rgo" class="rsb">ادخل لحسابي</button><div id="r-msg"></div><button type="button" id="r-sw" class="r-lnk">عندي حساب قبل كده</button>
   <div id="r-help">🎧 لو في مشكلة في الدخول كلم خدمة العملاء على واتساب 01028540358<a href="https://wa.me/201028540358" target="_blank" rel="noopener">💬 واتساب خدمة العملاء</a></div>
   <small>بياناتك بتستخدم لتوصيل طلباتك بس، ومش بنشاركها مع حد. <a href="privacy.html" target="_blank" rel="noopener">سياسة الخصوصية</a></small></div>`;
   document.body.appendChild(g);
