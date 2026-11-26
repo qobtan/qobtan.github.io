@@ -439,13 +439,23 @@ document.addEventListener('click', e => {
   const n = e.target.closest && e.target.closest('.oc-next');
   if (n) { const card = n.closest('.oc'); const sel = card.querySelector('.ost'); n.disabled = true; sel.value = n.dataset.to; sel.dispatchEvent(new Event('change', { bubbles: true })); }
 });
+let OPEND = 0;
+function toast(t, bad) { let d = document.getElementById('toast2'); if (!d) { d = document.createElement('div'); d.id = 'toast2'; d.style.cssText = 'position:fixed;left:50%;bottom:86px;transform:translateX(-50%);z-index:99999;padding:11px 22px;border-radius:24px;font:700 15px inherit;font-family:inherit;color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.3);transition:opacity .25s;pointer-events:none;opacity:0'; document.body.appendChild(d); } d.textContent = t; d.style.background = bad ? '#d93025' : '#1a9a52'; d.style.opacity = '1'; clearTimeout(toast.t); toast.t = setTimeout(() => { d.style.opacity = '0'; }, bad ? 3500 : 1600); }
 document.addEventListener('change', async e => {
   if (!e.target.classList || !e.target.classList.contains('ost')) return;
-  const el = e.target.closest('.ord'); const msg = el.querySelector('.msg');
-  const r = await rpc('admin_set_order_status', { p_pin: PIN, p_id: +el.dataset.oid, p_status: e.target.value }).catch(() => null);
-  if (r && r.ok && r.data === true) { msg.className = 'msg ok'; msg.textContent = 'اتحدّث'; el.classList.toggle('new', e.target.value === 'new'); const bd = el.querySelector('.bd'); bd.textContent = ST[e.target.value]; bd.className = 'bd s-' + e.target.value; setTimeout(loadOrders, 700); }
-  else { msg.className = 'msg err'; msg.textContent = 'فشل التحديث'; }
+  const el = e.target.closest('.oc'); if (!el) return;
+  const id = +el.dataset.oid, nv = e.target.value, o = ORDS.find(x => x.id === id); if (!o) return;
+  const prev = o.status; if (prev === nv) return;
+  o.status = nv; renderOrders(); toast('⏳ بيتحفظ...'); OPEND++;
+  const r = await rpc('admin_set_order_status', { p_pin: PIN, p_id: id, p_status: nv }).catch(() => null);
+  OPEND--;
+  if (r && r.ok && r.data === true) { toast('✓ اتحفظ'); }
+  else { o.status = prev; renderOrders(); toast('✗ مااتحفظش، جرّب تاني', true); }
 });
+async function adminRefresh() {
+  const s = (document.querySelector('.tabsec.on') || {}).id || 'sec-orders'; const f = { 'sec-orders': loadOrders, 'sec-products': async () => { await load(); await loadStock(); }, 'sec-profit': loadProfit, 'sec-materials': loadMats, 'sec-more': loadUsage, 'sec-customers': loadCustomers, 'sec-expenses': loadExp, 'sec-referrals': loadRef, 'sec-reviews': loadRev }[s];
+  if (f) await f();
+}
 $('#reloadord').addEventListener('click', loadOrders);
 
 async function loadFeeAdmin() { try { const r = await fetch(SUPA_URL + '/rest/v1/app_settings?select=value&key=eq.delivery_fee', { headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON } }); const d = await r.json(); $('#feeval').value = d[0] ? d[0].value : 25; } catch (e) {} }
@@ -460,7 +470,7 @@ $('#savevf').onclick = async () => { const m = $('#vfmsg'); const v = $('#vfval'
   const r = await rpc('admin_set_vf', { p_pin: PIN, p_num: v }).catch(() => null);
   if (r && r.ok) { m.className = 'msg ok'; m.textContent = v ? 'اتحفظ: ' + v : 'اتمسح — الرقم مش هيظهر للعميل'; } else { m.className = 'msg err'; m.textContent = 'مشكلة في الحفظ'; } };
 
-setInterval(() => { try { if (!$('#panel').hidden && !(document.activeElement && /SELECT|INPUT|TEXTAREA/.test(document.activeElement.tagName)) && document.visibilityState === 'visible') loadOrders(); } catch (e) {} }, 30000);
+setInterval(() => { try { if (!$('#panel').hidden && !OPEND && ((document.querySelector('.tabsec.on')||{}).id==='sec-orders') && !(document.activeElement && /SELECT|INPUT|TEXTAREA/.test(document.activeElement.tagName)) && document.visibilityState === 'visible') loadOrders(); } catch (e) {} }, 30000);
 document.addEventListener('visibilitychange', () => { try { if (document.visibilityState === 'visible' && !$('#panel').hidden) loadOrders(); } catch (e) {} });
 
 document.addEventListener('change', async e => {
@@ -751,3 +761,24 @@ async function loadUsage() {
   box.innerHTML = `<div class="ubox"><h3>📱 استخدام تطبيق العملاء</h3><div class="ugrid"><div><b>${+s.total || 0}</b><span>أجهزة فتحت التطبيق (الإجمالي)</span></div><div><b>${+s.today || 0}</b><span>فتحوه النهارده</span></div><div><b>${+s.week || 0}</b><span>فتحوه آخر ٧ أيام</span></div><div><b>${+s.ordered || 0}</b><span>عملاء عملوا أوردر</span></div></div><p>الرقم بيعد الأجهزة (كل جهاز = رقم مجهول عشوائي، من غير أي بيانات شخصية) اللي فتحت التطبيق أو الموقع. العدّ بدأ ${since}، فاللي فتحوه قبل كده مش محسوبين. نفس الشخص لو فتحه من موبايلين يتعد مرتين.</p></div>`;
 }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('#bnav [data-sec=more], [data-go=more]'); if (b) setTimeout(loadUsage, 50); });
+
+/* ===== سحب للتحديث ===== */
+(function () {
+  const ind = document.createElement('div'); ind.id = 'ptr'; ind.innerHTML = '<i></i><span>اسحب للتحديث</span>'; document.body.appendChild(ind);
+  const sp = ind.querySelector('span'); let y0 = 0, dy = 0, on = false, busy = false; const TH = 80;
+  const set = (d, txt) => { ind.style.transform = 'translate(-50%,' + (d - 70) + 'px)'; ind.style.opacity = Math.min(1, d / 40); ind.querySelector('i').style.transform = 'rotate(' + (d * 4) + 'deg)'; if (txt) sp.textContent = txt; };
+  addEventListener('touchstart', e => { if (busy || e.touches.length !== 1 || ($('#panel') && $('#panel').hidden) || document.querySelector('#pedit:not([hidden])')) { on = false; return; } if ((window.scrollY || document.documentElement.scrollTop || 0) > 0 || document.querySelector('[style*="z-index:99999"]')) { on = false; return; } y0 = e.touches[0].clientY; dy = 0; on = true; }, { passive: true });
+  addEventListener('touchmove', e => { if (!on || busy) return; const d = e.touches[0].clientY - y0; if (d <= 0) { dy = 0; set(0); return; } if ((window.scrollY || 0) > 0) { on = false; set(0); return; } dy = Math.min(d * 0.5, 110); if (e.cancelable) e.preventDefault(); ind.classList.remove('go'); set(dy, dy >= TH ? 'سيب للتحديث' : 'اسحب للتحديث'); }, { passive: false });
+  const end = async () => {
+    if (!on || busy) return; on = false;
+    if (dy < TH) { ind.style.transition = 'transform .25s,opacity .25s'; set(0); setTimeout(() => { ind.style.transition = ''; }, 300); return; }
+    busy = true; ind.style.transition = 'transform .2s'; set(TH - 20, 'بيتحدّث...'); ind.classList.add('go');
+    const t0 = Date.now();
+    try { const jobs = [adminRefresh()]; await Promise.race([Promise.all(jobs.map(p => Promise.resolve(p).catch(() => {}))), new Promise(r => setTimeout(r, 6000))]); } catch (e) {}
+    const left = 800 - (Date.now() - t0); if (left > 0) await new Promise(r => setTimeout(r, left));
+    sp.textContent = 'تم التحديث ✓'; ind.classList.remove('go'); await new Promise(r => setTimeout(r, 450));
+    ind.style.transition = 'transform .3s,opacity .3s'; set(0); setTimeout(() => { ind.style.transition = ''; busy = false; }, 350);
+  };
+  addEventListener('touchend', end, { passive: true }); addEventListener('touchcancel', end, { passive: true });
+})();
+
