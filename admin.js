@@ -783,13 +783,28 @@ document.addEventListener('click', e => { const b = e.target.closest && e.target
 })();
 
 
+let USERS = [];
+function renderUsers() {
+  const box = $('#usersbox'); const q = (($('#usq') || {}).value || '').trim().toLowerCase();
+  const fd = s => { const d = new Date(s); return d.toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit' }); };
+  const wa = p => 'https://wa.me/20' + String(p).replace(/^0/, '');
+  const L = USERS.filter(x => !q || String(x.name).toLowerCase().includes(q) || String(x.phone).includes(q));
+  const today = new Date().toDateString(), nToday = USERS.filter(x => new Date(x.created_at).toDateString() === today).length;
+  const nM = USERS.filter(x => x.gender === 'ذكر').length, nF = USERS.filter(x => x.gender === 'أنثى').length;
+  const head = `<div class="usum"><div><b>${USERS.length}</b><span>مسجّل</span></div><div><b>${nToday}</b><span>النهاردة</span></div><div><b>${nM}</b><span>ذكر</span></div><div><b>${nF}</b><span>أنثى</span></div></div><input id="usq" class="usq" type="search" placeholder="🔍 دوّر بالاسم أو الرقم" value="${esc(q)}">`;
+  const card = x => { const av = x.photo && /^data:image\//.test(x.photo) ? `<img class="uav" src="${esc(x.photo)}" alt="">` : `<div class="uav ph">${esc((String(x.name).trim()[0] || '👤'))}</div>`;
+    const chips = [x.gender ? (x.gender === 'ذكر' ? '👨 ' : '👩 ') + esc(x.gender) : '', x.age ? '🎂 ' + (+x.age) + ' سنة' : '', x.dob ? '📅 ' + esc(String(x.dob)) : ''].filter(Boolean).map(c => `<span class="uch">${c}</span>`).join('');
+    return `<div class="ucard">${av}<div class="ubody"><div class="unm">${esc(x.name)}</div><div class="uph" dir="ltr">${esc(x.phone)}</div><div class="uchs">${chips}</div><div class="umeta">سجّل ${esc(fd(x.created_at))}${x.orders ? ` · <b>${+x.orders}</b> طلب` : ' · لسه ما طلبش'}</div></div><div class="uact"><a class="uwa" href="${wa(x.phone)}" target="_blank" rel="noopener">واتساب</a><a class="ucall" href="tel:${esc(x.phone)}">📞 اتصال</a></div></div>`; };
+  const keep = document.activeElement && document.activeElement.id === 'usq';
+  box.innerHTML = head + (L.length ? L.map(card).join('') : `<div class="hint2" style="padding:18px 4px;text-align:center">${USERS.length ? 'مفيش نتيجة.' : 'لسه محدش سجّل.'}</div>`);
+  if (keep) { const e = $('#usq'); e.focus(); e.setSelectionRange(e.value.length, e.value.length); }
+}
+document.addEventListener('input', e => { if (e.target && e.target.id === 'usq') renderUsers(); });
 async function loadUsers() {
   const box = $('#usersbox'); if (!box.innerHTML.trim()) box.innerHTML = '<div class="hint2">بيحمّل...</div>';
   const r = await rpc('admin_list_users', { p_pin: PIN }).catch(() => null);
   if (!r || !r.ok || !Array.isArray(r.data)) { box.innerHTML = '<div class="msg err">مشكلة في التحميل — جرّب تاني</div>'; return; }
-  const L = r.data, fd = s => { const d = new Date(s); return d.toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' }) + ' · ' + d.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit' }); };
-  const wa = p => 'https://wa.me/20' + String(p).replace(/^0/, '');
-  box.innerHTML = `<div class="hint2" style="margin:0 0 8px">إجمالي المسجلين: <b>${L.length}</b>. الرقم مكتوب من العميل ومش متأكد منه بكود.</div>` + (L.length ? '<div class="pcard">' + L.map(x => `<div class="crow">${x.photo && /^data:image\//.test(x.photo) ? `<img class="avt" src="${esc(x.photo)}" alt="">` : ''}<div class="cn">${esc(x.name)} <small>${esc(x.phone)}${x.gender ? ' · ' + esc(x.gender) : ''}${x.dob ? ' · 🎂 ' + esc(String(x.dob)) : ''}${x.age ? ' (' + (+x.age) + ' سنة)' : ''} · سجّل ${esc(fd(x.created_at))}${x.orders ? ' · ' + x.orders + ' طلب' : ''}</small></div><a class="mbtn" href="${wa(x.phone)}" target="_blank" rel="noopener">واتساب</a></div>`).join('') + '</div>' : '<div class="hint2" style="padding:18px 4px;text-align:center">لسه محدش سجّل.</div>');
+  USERS = r.data; renderUsers();
 }
 
 
