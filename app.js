@@ -460,8 +460,8 @@ function loadRevData() {
     try {
       const r = await fetch(SUPA_URL + '/rest/v1/rpc/app_register', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_name: nm, p_phone: ph, p_did: localStorage.getItem('did') || '', p_age: ag, p_gender: GN, p_photo: PH }) });
       if (!r.ok) { let m = ''; try { m = (await r.json()).message || ''; } catch (e2) {} const er = new Error('x'); er.m = m; throw er; }
-      store.set('reg', { name: nm, phone: ph, age: ag, gender: GN }); info.name = nm; info.phone = ph; store.set('info', info); g.remove(); render(true);
-    } catch (e) { b.disabled = false; b.textContent = 'سجّل وادخل'; msg.textContent = /phone exists/.test(e.m || '') ? 'الرقم ده مسجل قبل كده من جهاز تاني. كلمنا على واتساب 01028540358' : /device limit/.test(e.m || '') ? 'الجهاز ده سجّل أكتر من رقم. كلمنا على واتساب 01028540358' : /bad/.test(e.m || '') ? 'راجع البيانات واكتبها صح' : 'مفيش اتصال، جرّب تاني'; }
+    } catch (e) { b.disabled = false; b.textContent = 'سجّل وادخل'; msg.textContent = /phone exists/.test(e.m || '') ? 'الرقم ده مسجل قبل كده من جهاز تاني. كلمنا على واتساب 01028540358' : /device limit/.test(e.m || '') ? 'الجهاز ده سجّل أكتر من رقم. كلمنا على واتساب 01028540358' : /bad/.test(e.m || '') ? 'راجع البيانات واكتبها صح' : 'مفيش اتصال، جرّب تاني'; return; }
+    store.set('reg', { name: nm, phone: ph, age: ag, gender: GN }); info.name = nm; info.phone = ph; store.set('info', info); g.remove(); try { render(true); } catch (e3) {}
   };
   g.querySelector('#r-go').addEventListener('click', go);
   g.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
