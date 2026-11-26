@@ -342,3 +342,4 @@ html,body{background:#0b141a !important}
 #reg #r-rgo{width:100%;border:0;border-radius:26px;padding:14px;margin-top:8px;font:inherit;font-weight:800;font-size:17px;color:#0b2a4a;background:linear-gradient(135deg,#f9e08f,#d9a93a);cursor:pointer}
 #reg .r-lnk{background:none;border:0;color:#f9e08f;font:inherit;font-size:14px;margin-top:10px;padding:8px;text-decoration:underline;cursor:pointer}
 .ubind{display:block;margin-top:6px;border:1px solid #d9a93a;background:#fff8e1;color:#7a5b00;border-radius:12px;padding:6px 10px;font:inherit;font-size:12px;cursor:pointer}
+.uopen{display:block;margin-top:6px;font-size:12px;color:#2e7d32}

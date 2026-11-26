@@ -438,10 +438,10 @@ function loadRevData() {
 (function () {
   if (store.get('reg', null)) return;
   const g = document.createElement('div'); g.id = 'reg';
-  g.innerHTML = `<div class="rbox"><img src="logo.jpg" alt=""><h2>أهلاً بيك في منظفات القبطان</h2><p class="rg">سجّل اسمك ورقمك مرة واحدة وكمّل طلبك</p><p class="rsb">ادخل برقمك وتاريخ ميلادك وهنرجّعلك حسابك</p>
+  g.innerHTML = `<div class="rbox"><img src="logo.jpg" alt=""><h2>أهلاً بيك في منظفات القبطان</h2><p class="rg">سجّل اسمك ورقمك مرة واحدة وكمّل طلبك</p><p class="rsb">اكتب رقمك وهنرجّعلك حسابك على موبايلك</p>
   <input class="rg" type="text" id="r-name" placeholder="الاسم" autocomplete="name" value="${esc(info.name || '')}">
   <input type="tel" id="r-phone" placeholder="رقم التليفون (01xxxxxxxxx)" autocomplete="tel" inputmode="numeric" value="${esc(info.phone || '')}">
-  <label class="r-dl">تاريخ الميلاد</label><input type="date" id="r-age" min="1920-01-01">
+  
   <div id="r-g" class="rg"><button type="button" data-g="ذكر">👨 ذكر</button><button type="button" data-g="أنثى">👩 أنثى</button></div>
   <label id="r-pl" class="rg"><span id="r-pv">📷</span> صورتك (اختياري)<input type="file" id="r-photo" accept="image/*" hidden></label>
   <button type="button" id="r-go" class="rg">سجّل وادخل</button><button type="button" id="r-rgo" class="rsb">ادخل لحسابي</button><div id="r-msg"></div><button type="button" id="r-sw" class="r-lnk">عندي حساب قبل كده</button>
@@ -456,31 +456,28 @@ function loadRevData() {
     const nm = g.querySelector('#r-name').value.trim(); let ph = g.querySelector('#r-phone').value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\D/g, ''); if (ph.startsWith('20')) ph = '0' + ph.slice(2);
     if (nm.length < 2) { msg.textContent = 'اكتب اسمك'; return; }
     if (!/^01[0125][0-9]{8}$/.test(ph)) { msg.textContent = 'اكتب رقم موبايل مصري صح (11 رقم بيبدأ بـ 01)'; return; }
-    const dob = g.querySelector('#r-age').value; const ag = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / 31557600000) : 0; if (!(ag >= 5 && ag <= 100)) { msg.textContent = 'اكتب تاريخ ميلادك صح'; return; }
     if (!GN) { msg.textContent = 'اختار ذكر ولا أنثى'; return; }
     const b = g.querySelector('#r-go'); b.disabled = true; b.textContent = 'ثانية...'; msg.textContent = '';
     try {
-      const r = await fetch(SUPA_URL + '/rest/v1/rpc/app_register', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_name: nm, p_phone: ph, p_did: localStorage.getItem('did') || '', p_dob: dob, p_gender: GN, p_photo: PH, p_hw: HW() }) });
+      const r = await fetch(SUPA_URL + '/rest/v1/rpc/app_register', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_name: nm, p_phone: ph, p_did: localStorage.getItem('did') || '', p_gender: GN, p_photo: PH, p_hw: HW() }) });
       if (!r.ok) { let m = ''; try { m = (await r.json()).message || ''; } catch (e2) {} const er = new Error('x'); er.m = m; throw er; }
-    } catch (e) { b.disabled = false; b.textContent = 'سجّل وادخل'; msg.textContent = /phone exists/.test(e.m || '') ? 'الرقم ده مسجل قبل كده. لو ده حسابك دوس «عندي حساب قبل كده» وادخل بتاريخ ميلادك. 🎧 ولو في مشكلة كلم خدمة العملاء على واتساب 01028540358' : /device limit/.test(e.m || '') ? 'الجهاز ده سجّل أكتر من رقم. 🎧 كلمنا على واتساب 01028540358' : /bad/.test(e.m || '') ? 'راجع البيانات واكتبها صح' : 'مفيش اتصال، جرّب تاني'; return; }
-    try { if (PH) localStorage.setItem('regphoto', PH); } catch (e4) {} store.set('reg', { name: nm, phone: ph, dob: dob, gender: GN }); info.name = nm; info.phone = ph; store.set('info', info); g.remove(); try { render(true); } catch (e3) {}
+    } catch (e) { b.disabled = false; b.textContent = 'سجّل وادخل'; msg.textContent = /phone exists/.test(e.m || '') ? 'الرقم ده مسجل قبل كده. لو ده حسابك دوس «عندي حساب قبل كده» وادخل برقمك. 🎧 ولو في مشكلة كلم خدمة العملاء على واتساب 01028540358' : /device limit/.test(e.m || '') ? 'الجهاز ده سجّل أكتر من رقم. 🎧 كلمنا على واتساب 01028540358' : /bad/.test(e.m || '') ? 'راجع البيانات واكتبها صح' : 'مفيش اتصال، جرّب تاني'; return; }
+    try { if (PH) localStorage.setItem('regphoto', PH); } catch (e4) {} store.set('reg', { name: nm, phone: ph, gender: GN }); info.name = nm; info.phone = ph; store.set('info', info); g.remove(); try { render(true); } catch (e3) {}
   };
   const sw = g.querySelector('#r-sw'), setRs = on => { g.classList.toggle('rs', on); sw.textContent = on ? 'مش عندي حساب، عايز أسجّل' : 'عندي حساب قبل كده'; msg.textContent = ''; };
   sw.addEventListener('click', () => setRs(!g.classList.contains('rs')));
   g._rs = setRs;
   const rgo = async () => {
     let ph = g.querySelector('#r-phone').value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\D/g, ''); if (ph.startsWith('20')) ph = '0' + ph.slice(2);
-    const dob = g.querySelector('#r-age').value;
     if (!/^01[0125][0-9]{8}$/.test(ph)) { msg.textContent = 'اكتب رقم موبايل مصري صح (11 رقم بيبدأ بـ 01)'; return; }
-    if (!dob) { msg.textContent = 'اكتب تاريخ ميلادك'; return; }
     const b = g.querySelector('#r-rgo'); b.disabled = true; b.textContent = 'ثانية...'; msg.textContent = '';
     try {
-      const r = await fetch(SUPA_URL + '/rest/v1/rpc/app_restore', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_phone: ph, p_did: localStorage.getItem('did') || '', p_dob: dob, p_hw: HW() }) });
+      const r = await fetch(SUPA_URL + '/rest/v1/rpc/app_restore2', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_phone: ph, p_did: localStorage.getItem('did') || '', p_hw: HW() }) });
       if (!r.ok) throw new Error('x'); const d = await r.json();
       b.disabled = false; b.textContent = 'ادخل لحسابي';
-      if (!d || !d.ok) { msg.textContent = d && d.reason === 'locked' ? 'جرّبت كتير غلط. استنى ' + (d.mins || 60) + ' دقيقة وجرّب تاني، أو كلم خدمة العملاء على واتساب 01028540358' : d && d.reason === 'otherphone' ? 'الرقم ده مسجّل على موبايل تاني. لو غيّرت موبايلك كلم خدمة العملاء على واتساب 01028540358 وهنفعّله على موبايلك الجديد' : d && d.reason === 'device' ? 'الجهاز ده سجّل أكتر من رقم. 🎧 كلمنا على واتساب 01028540358' : 'الرقم أو تاريخ الميلاد مش مظبوط' + (d && d.left != null ? ' (فاضل ' + d.left + ' محاولات)' : '') + '. لو محتاج مساعدة كلم خدمة العملاء على واتساب 01028540358'; return; }
+      if (!d || !d.ok) { msg.textContent = d && d.reason === 'locked' ? 'جرّبت كتير غلط. استنى ' + (d.mins || 60) + ' دقيقة وجرّب تاني، أو كلم خدمة العملاء على واتساب 01028540358' : d && d.reason === 'otherphone' ? 'الرقم ده مش مسجّل على الموبايل ده. لو غيّرت موبايلك كلم خدمة العملاء على واتساب 01028540358 وهنفعّله على موبايلك الجديد' + (d.left != null ? ' (فاضل ' + d.left + ' محاولات)' : '') : d && d.reason === 'device' ? 'الجهاز ده سجّل أكتر من رقم. 🎧 كلمنا على واتساب 01028540358' : 'مش قادر أرجّع الحساب. كلم خدمة العملاء على واتساب 01028540358'; return; }
       try { if (d.photo) localStorage.setItem('regphoto', d.photo); } catch (e4) {}
-      store.set('reg', { name: d.name, phone: d.phone, dob: d.dob, gender: d.gender }); info.name = d.name; info.phone = d.phone; store.set('info', info); g.remove(); try { render(true); } catch (e3) {}
+      store.set('reg', { name: d.name, phone: d.phone, gender: d.gender }); info.name = d.name; info.phone = d.phone; store.set('info', info); g.remove(); try { render(true); } catch (e3) {}
     } catch (e) { b.disabled = false; b.textContent = 'ادخل لحسابي'; msg.textContent = 'مفيش اتصال، جرّب تاني'; }
   };
   g.querySelector('#r-rgo').addEventListener('click', rgo);
@@ -496,8 +493,7 @@ function loadRevData() {
   const open = () => {
     const r = store.get('reg', {}) || {}; let ph = ''; try { ph = localStorage.getItem('regphoto') || ''; } catch (e) {}
     const av = /^data:image\//.test(ph) ? '<img src="' + esc(ph) + '" alt="">' : '<span>' + esc((r.name || '👤').trim().charAt(0)) + '</span>';
-    let age = ''; if (r.dob) { const n = Math.floor((Date.now() - new Date(r.dob).getTime()) / 31557600000); if (n > 0) age = ' (' + n + ' سنة)'; }
-    const rows = [['📞', r.phone], ['🎂', r.dob ? r.dob + age : '']].filter(x => x[1]).map(x => '<div>' + x[0] + ' <b>' + esc(String(x[1])) + '</b></div>').join('');
+    const rows = [['📞', r.phone], ].filter(x => x[1]).map(x => '<div>' + x[0] + ' <b>' + esc(String(x[1])) + '</b></div>').join('');
     const rv = document.querySelector('#m-rev-flag'); const hasRev = !!((REVS && REVS.count) || (IMGS && IMGS.length));
     mn.innerHTML = '<div class="mn-bg" data-mclose="1"></div><div class="mn-p"><div class="mn-acc"><label class="mn-av" id="mn-avl">' + av + '<em>📷</em><input type="file" id="mn-ph" accept="image/*" hidden></label><div class="mn-nm">' + esc(r.name || 'حسابي') + '</div><div class="mn-inf">' + rows + '</div></div>'
       + '<button type="button" id="mn-chat">🎧 خدمة العملاء<b id="mn-cu" hidden></b></button>' + '<button type="button" id="mn-edit">✏️ تعديل بياناتي</button><div id="mn-ef" hidden></div><button type="button" data-tab="invite" data-mclose="1">🎁 دعوة صحابك</button>' + (hasRev ? '<button type="button" id="m-rev" data-tab="reviews" data-mclose="1">⭐ آراء العملاء</button>' : '')
@@ -509,11 +505,11 @@ function loadRevData() {
   mn.addEventListener('change', e => { if (e.target.id !== 'mn-ph') return; const f = e.target.files[0]; if (!f) return; const im = new Image(), rd = new FileReader(); rd.onload = () => { im.onload = async () => { const s = 200, c = document.createElement('canvas'); c.width = c.height = s; const k = Math.max(s / im.width, s / im.height), w = im.width * k, h = im.height * k; c.getContext('2d').drawImage(im, (s - w) / 2, (s - h) / 2, w, h); const d = c.toDataURL('image/jpeg', 0.8); const box = mn.querySelector('.mn-av'); try { await rpc({ p_photo: d }); localStorage.setItem('regphoto', d); const old = box.querySelector('img,span'); if (old) old.remove(); const ni = new Image(); ni.src = d; box.prepend(ni); } catch (er) { alert(/not allowed/.test(er.message) ? 'مش قادر أحفظ الصورة من الجهاز ده. كلم خدمة العملاء.' : 'مفيش اتصال، جرّب تاني'); } }; im.src = rd.result; }; rd.readAsDataURL(f); });
   mn.addEventListener('click', e => {
     if (e.target.closest('#mn-chat')) { mn.hidden = true; openChat(); return; }
-    if (e.target.closest('#mn-edit')) { const r = store.get('reg', {}) || {}, f = mn.querySelector('#mn-ef'); f.hidden = !f.hidden; if (!f.hidden) { f.innerHTML = '<input id="ef-n" type="text" value="' + esc(r.name || '') + '" placeholder="الاسم"><input id="ef-p" type="text" value="' + esc(r.phone || '') + '" disabled><label>تاريخ الميلاد</label><input id="ef-d" type="date" value="' + esc(r.dob || '') + '"><div id="ef-g"><button type="button" data-g="ذكر" class="' + (r.gender === 'ذكر' ? 'on' : '') + '">👨 ذكر</button><button type="button" data-g="أنثى" class="' + (r.gender === 'أنثى' ? 'on' : '') + '">👩 أنثى</button></div><button type="button" id="ef-s">حفظ</button><div id="ef-m"></div>'; } return; }
+    if (e.target.closest('#mn-edit')) { const r = store.get('reg', {}) || {}, f = mn.querySelector('#mn-ef'); f.hidden = !f.hidden; if (!f.hidden) { f.innerHTML = '<input id="ef-n" type="text" value="' + esc(r.name || '') + '" placeholder="الاسم"><input id="ef-p" type="text" value="' + esc(r.phone || '') + '" disabled><div id="ef-g"><button type="button" data-g="ذكر" class="' + (r.gender === 'ذكر' ? 'on' : '') + '">👨 ذكر</button><button type="button" data-g="أنثى" class="' + (r.gender === 'أنثى' ? 'on' : '') + '">👩 أنثى</button></div><button type="button" id="ef-s">حفظ</button><div id="ef-m"></div>'; } return; }
     const gb = e.target.closest('#ef-g button'); if (gb) { mn.querySelectorAll('#ef-g button').forEach(x => x.classList.toggle('on', x === gb)); return; }
-    if (e.target.closest('#ef-s')) { const r = store.get('reg', {}) || {}, nm = mn.querySelector('#ef-n').value.trim(), dob = mn.querySelector('#ef-d').value, gn = (mn.querySelector('#ef-g .on') || {}).dataset; const m = mn.querySelector('#ef-m'); const ag = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / 31557600000) : 0;
-      if (nm.length < 2) { m.textContent = 'اكتب اسمك'; return; } if (!(ag >= 5 && ag <= 100)) { m.textContent = 'اكتب تاريخ ميلادك صح'; return; } if (!gn) { m.textContent = 'اختار ذكر ولا أنثى'; return; }
-      m.textContent = 'ثانية...'; rpc({ p_name: nm, p_dob: dob, p_gender: gn.g }).then(() => { r.name = nm; r.dob = dob; r.gender = gn.g; store.set('reg', r); info.name = nm; store.set('info', info); m.textContent = 'اتحفظ ✓'; setTimeout(open, 700); }).catch(er => { m.textContent = /not allowed/.test(er.message) ? 'مش قادر أحفظ من الجهاز ده. كلم خدمة العملاء.' : 'مفيش اتصال، جرّب تاني'; }); return; }
+    if (e.target.closest('#ef-s')) { const r = store.get('reg', {}) || {}, nm = mn.querySelector('#ef-n').value.trim(), gn = (mn.querySelector('#ef-g .on') || {}).dataset; const m = mn.querySelector('#ef-m');
+      if (nm.length < 2) { m.textContent = 'اكتب اسمك'; return; } if (!gn) { m.textContent = 'اختار ذكر ولا أنثى'; return; }
+      m.textContent = 'ثانية...'; rpc({ p_name: nm, p_gender: gn.g }).then(() => { r.name = nm; r.gender = gn.g; store.set('reg', r); info.name = nm; store.set('info', info); m.textContent = 'اتحفظ ✓'; setTimeout(open, 700); }).catch(er => { m.textContent = /not allowed/.test(er.message) ? 'مش قادر أحفظ من الجهاز ده. كلم خدمة العملاء.' : 'مفيش اتصال، جرّب تاني'; }); return; }
     if (e.target.closest('#mn-avl, #mn-ef, #mn-edit')) return; if (e.target.closest('[data-mclose]')) setTimeout(() => { mn.hidden = true; }, 0); });
 })();
 
@@ -543,3 +539,5 @@ function loadRevData() {
 
 /* فتح واتساب والاتصال برّه التطبيق (target=_blank جوه الـ APK) */
 document.addEventListener('click', e => { const a = e.target && e.target.closest && e.target.closest('a[href]'); if (!a) return; const h = a.getAttribute('href') || ''; if (/^(https?:\/\/(wa\.me|api\.whatsapp\.com)|whatsapp:|tel:|mailto:)/i.test(h)) { e.preventDefault(); location.href = h; } }, true);
+
+;(function(){try{const r=store.get('reg',null);if(!r||!r.phone||!window.AndroidFCM||!AndroidFCM.hwid)return;const hw=String(AndroidFCM.hwid()||'');if(!hw)return;fetch(SUPA_URL+'/rest/v1/rpc/app_bind',{method:'POST',headers:{apikey:SUPA_ANON,Authorization:'Bearer '+SUPA_ANON,'Content-Type':'application/json'},body:JSON.stringify({p_phone:r.phone,p_did:localStorage.getItem('did')||'',p_hw:hw})}).catch(()=>{});}catch(e){}})();
