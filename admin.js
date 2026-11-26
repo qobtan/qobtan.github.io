@@ -818,15 +818,33 @@ async function loadChats() {
   const r = await rpc('admin_chat_list', { p_pin: PIN }).catch(() => null);
   if (CHP) return;
   if (!r || !r.ok || !Array.isArray(r.data)) { box.innerHTML = '<div class="msg err">مشكلة في التحميل، جرّب تاني</div>'; return; }
-  box.innerHTML = r.data.length ? r.data.map(x => `<button type="button" class="cli ${x.unread ? 'un' : ''}" data-chat="${esc(x.phone)}" data-nm="${esc(x.name)}"><div class="cn"><b>${esc(x.name)}</b><small>${x.ls === 'a' ? 'إنت: ' : ''}${esc(x.last)}</small></div><div style="text-align:left"><em>${esc(chT(x.at))}</em>${x.unread ? `<div class="ub">${+x.unread}</div>` : ''}</div></button>`).join('') : '<div class="hint2" style="padding:18px 4px;text-align:center">لسه مفيش رسايل من العملاء.</div>';
+  box.innerHTML = r.data.length ? r.data.map(x => `<button type="button" class="cli ${x.unread ? 'un' : ''}" data-chat="${esc(x.phone)}" data-nm="${esc(x.name)}"><div class="cn"><b>${esc(x.name)}</b><small>${x.ls === 'a' ? 'إنت: ' : ''}${/^v:\d+$/.test(x.last) ? '🎤 رسالة صوتية' : esc(x.last)}</small></div><div style="text-align:left"><em>${esc(chT(x.at))}</em>${x.unread ? `<div class="ub">${+x.unread}</div>` : ''}</div></button>`).join('') : '<div class="hint2" style="padding:18px 4px;text-align:center">لسه مفيش رسايل من العملاء.</div>';
   chatBadge();
 }
+
+const VREC = {
+  mime() { const c = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm', 'audio/ogg;codecs=opus']; for (const m of c) { try { if (window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m; } catch (e) {} } return ''; },
+  async start(onTick, onEnd) {
+    if (!navigator.mediaDevices || !window.MediaRecorder) throw new Error('nosupport');
+    const st = await navigator.mediaDevices.getUserMedia({ audio: true }); const mt = VREC.mime(); let rec; try { rec = new MediaRecorder(st, mt ? { mimeType: mt, audioBitsPerSecond: 24000 } : { audioBitsPerSecond: 24000 }); } catch (e) { rec = new MediaRecorder(st); }
+    const parts = []; const t0 = Date.now(); let cancel = false, done = false;
+    rec.ondataavailable = e => { if (e.data && e.data.size) parts.push(e.data); };
+    const tick = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); onTick(s); if (s >= 60) fin(false); }, 250);
+    const fin = c => { if (done) return; done = true; cancel = c; clearInterval(tick); try { rec.stop(); } catch (e) {} };
+    rec.onstop = () => { st.getTracks().forEach(t => t.stop()); if (cancel) return; const dur = Math.max(1, Math.min(60, Math.round((Date.now() - t0) / 1000))); const bl = new Blob(parts, { type: (rec.mimeType || mt || 'audio/webm') }); const fr = new FileReader(); fr.onload = () => { const u = String(fr.result), i = u.indexOf(','); let m = (u.slice(5, u.indexOf(';')) || 'audio/webm').split(';')[0]; onEnd({ data: u.slice(i + 1), mime: m, dur }); }; fr.readAsDataURL(bl); };
+    rec.start(); return { stop: () => fin(false), cancel: () => fin(true) };
+  },
+  fmt(s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); },
+  btn(x) { const m = /^v:(\d+)$/.exec(x.b); return m ? '<button type="button" class="vp" data-vid="' + x.id + '"><b>▶</b><u></u><small>' + VREC.fmt(+m[1]) + '</small></button>' : null; },
+  async play(b, getter) { if (b._a && !b._a.paused) { b._a.pause(); b.firstChild.textContent = '▶'; return; } if (!b._a) { b.firstChild.textContent = '…'; let r = null; try { r = await getter(b.dataset.vid); } catch (e) {} if (!r || !r.ok) { b.firstChild.textContent = '✕'; b.querySelector('small').textContent = 'الصوت اتمسح'; return; } b._a = new Audio('data:' + r.mime + ';base64,' + r.data); const a = b._a; a.onended = () => { b.firstChild.textContent = '▶'; b.querySelector('u').style.setProperty('--w','0'); }; a.ontimeupdate = () => { if (a.duration) b.querySelector('u').style.setProperty('--w',(a.currentTime / a.duration * 100) + '%'); }; } b._a.play().then(() => { b.firstChild.textContent = '⏸'; }).catch(() => { b.firstChild.textContent = '▶'; }); }
+};
+
 async function openChatThread(phone, name, quiet) {
   CHP = { phone, name }; const box = $('#chatbox');
-  if (!quiet || !box.querySelector('.cth')) { box.innerHTML = `<div class="cth"><div class="chd"><button type="button" id="chback">‹ كل المحادثات</button><b>${esc(name)}</b><a href="https://wa.me/20${String(phone).replace(/^0/, '')}" target="_blank" rel="noopener">واتساب</a></div><div class="cl"></div><div class="cf"><textarea id="cht" rows="1" placeholder="اكتب ردك..." maxlength="1000"></textarea><button type="button" id="chsend">إرسال</button></div></div>`; }
+  if (!quiet || !box.querySelector('.cth')) { box.innerHTML = `<div class="cth"><div class="chd"><button type="button" id="chback">‹ كل المحادثات</button><b>${esc(name)}</b><a href="https://wa.me/20${String(phone).replace(/^0/, '')}" target="_blank" rel="noopener">واتساب</a></div><div class="cl"></div><div class="cf"><textarea id="cht" rows="1" placeholder="اكتب ردك..." maxlength="1000"></textarea><button type="button" id="chmic" aria-label="صوت">🎤</button><button type="button" id="chsend">إرسال</button></div><div class="cr" hidden><button type="button" id="chrc">🗑</button><span id="chrt">0:00</span><em>● بيسجّل...</em><button type="button" id="chrs">إرسال ➤</button></div></div>`; }
   const r = await rpc('admin_chat_get', { p_pin: PIN, p_phone: phone }).catch(() => null); if (!r || !r.ok || !Array.isArray(r.data) || !CHP) return;
   const cl = box.querySelector('.cl'); if (!cl) return; const key = r.data.map(x => x.id).join(','); if (cl.dataset.k === key) return; cl.dataset.k = key; const end = cl.scrollHeight - cl.scrollTop - cl.clientHeight < 80 || !cl.dataset.f;
-  cl.innerHTML = r.data.map(x => `<div class="cm ${x.s}"><span>${esc(x.b)}</span><i>${esc(chT(x.t))}</i></div>`).join(''); if (end) { cl.scrollTop = cl.scrollHeight; cl.dataset.f = '1'; } chatBadge();
+  cl.innerHTML = r.data.map(x => `<div class="cm ${x.s}">${VREC.btn(x) || `<span>${esc(x.b)}</span>`}<i>${esc(chT(x.t))}</i></div>`).join(''); if (end) { cl.scrollTop = cl.scrollHeight; cl.dataset.f = '1'; } chatBadge();
 }
 document.addEventListener('click', async e => {
   const c = e.target.closest && e.target.closest('[data-chat]'); if (c) { openChatThread(c.dataset.chat, c.dataset.nm); return; }
@@ -838,3 +856,13 @@ setTimeout(chatBadge, 2500);
 
 document.addEventListener('click', async e => { const b = e.target && e.target.closest && e.target.closest('[data-ub]'); if (!b) return; if (!confirm('تفك ربط الجهاز لرقم ' + b.dataset.ub + '؟ العميل هيقدر يدخل من موبايل جديد برقمه (مرة واحدة).')) return; const r = await rpc('admin_unbind_device', { p_pin: PIN, p_phone: b.dataset.ub }).catch(() => null); if (r && r.ok) { alert('تم فك الربط ✓'); loadUsers(); } else alert('حصلت مشكلة، جرّب تاني'); });
 document.addEventListener('click', e => { const a = e.target && e.target.closest && e.target.closest('a[href]'); if (!a) return; const h = a.getAttribute('href') || ''; if (/^(https?:\/\/(wa\.me|api\.whatsapp\.com)|whatsapp:|tel:|mailto:)/i.test(h)) { e.preventDefault(); location.href = h; } }, true);
+
+let ADMREC = null;
+document.addEventListener('click', async e => {
+  const t = e.target; if (!t.closest) return;
+  const vb = t.closest('.vp'); if (vb) { VREC.play(vb, id => rpc('admin_chat_audio_get', { p_pin: PIN, p_id: +id }).then(r => r && r.ok ? r.data : null)); return; }
+  const f = $('#chatbox .cf'), rr = $('#chatbox .cr'); if (!f || !rr) return;
+  if (t.closest('#chmic') && CHP) { const ph = CHP.phone; try { ADMREC = await VREC.start(s => { $('#chrt').textContent = VREC.fmt(s); }, async v => { const r = await rpc('admin_chat_send_voice', { p_pin: PIN, p_phone: ph, p_data: v.data, p_mime: v.mime, p_dur: v.dur }).catch(() => null); const f2 = $('#chatbox .cf'), r2 = $('#chatbox .cr'); if (f2) f2.hidden = false; if (r2) r2.hidden = true; if (r && r.ok) { const cl = $('#chatbox .cl'); if (cl) cl.dataset.k = ''; if (CHP) openChatThread(CHP.phone, CHP.name, true); } else alert('الصوت ماتبعتش، جرّب تاني'); }); $('#chrt').textContent = '0:00'; f.hidden = true; rr.hidden = false; } catch (er) { alert('التسجيل محتاج إذن المايك من المتصفح (كروم). لو رفضت قبل كده فعّله من إعدادات الموقع.'); } return; }
+  if (t.closest('#chrc')) { if (ADMREC) ADMREC.cancel(); ADMREC = null; f.hidden = false; rr.hidden = true; return; }
+  if (t.closest('#chrs')) { if (ADMREC) { ADMREC.stop(); ADMREC = null; } }
+});
