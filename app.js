@@ -445,7 +445,7 @@ function loadRevData() {
   <div id="r-g"><button type="button" data-g="ذكر">👨 ذكر</button><button type="button" data-g="أنثى">👩 أنثى</button></div>
   <label id="r-pl"><span id="r-pv">📷</span> صورتك (اختياري)<input type="file" id="r-photo" accept="image/*" hidden></label>
   <button type="button" id="r-go">سجّل وادخل</button><div id="r-msg"></div>
-  <div id="r-help">لو في مشكلة في الدخول كلم خدمة العملاء على واتساب 01028540358<a href="https://wa.me/201028540358" target="_blank" rel="noopener">💬 واتساب خدمة العملاء</a></div>
+  <div id="r-help">🎧 لو في مشكلة في الدخول كلم خدمة العملاء على واتساب 01028540358<a href="https://wa.me/201028540358" target="_blank" rel="noopener">💬 واتساب خدمة العملاء</a></div>
   <small>بياناتك بتستخدم لتوصيل طلباتك بس، ومش بنشاركها مع حد. <a href="privacy.html" target="_blank" rel="noopener">سياسة الخصوصية</a></small></div>`;
   document.body.appendChild(g);
   const msg = g.querySelector('#r-msg'); let PH = null, GN = '';
@@ -461,7 +461,7 @@ function loadRevData() {
     try {
       const r = await fetch(SUPA_URL + '/rest/v1/rpc/app_register', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_name: nm, p_phone: ph, p_did: localStorage.getItem('did') || '', p_age: ag, p_gender: GN, p_photo: PH }) });
       if (!r.ok) { let m = ''; try { m = (await r.json()).message || ''; } catch (e2) {} const er = new Error('x'); er.m = m; throw er; }
-    } catch (e) { b.disabled = false; b.textContent = 'سجّل وادخل'; msg.textContent = /phone exists/.test(e.m || '') ? 'الرقم ده مسجل قبل كده. لو في مشكلة في الدخول كلم خدمة العملاء على واتساب 01028540358 (الزرار تحت)' : /device limit/.test(e.m || '') ? 'الجهاز ده سجّل أكتر من رقم. كلمنا على واتساب 01028540358' : /bad/.test(e.m || '') ? 'راجع البيانات واكتبها صح' : 'مفيش اتصال، جرّب تاني'; return; }
+    } catch (e) { b.disabled = false; b.textContent = 'سجّل وادخل'; msg.textContent = /phone exists/.test(e.m || '') ? 'الرقم ده مسجل قبل كده. 🎧 لو في مشكلة في الدخول كلم خدمة العملاء على واتساب 01028540358 (الزرار تحت) 🎧' : /device limit/.test(e.m || '') ? 'الجهاز ده سجّل أكتر من رقم. 🎧 كلمنا على واتساب 01028540358' : /bad/.test(e.m || '') ? 'راجع البيانات واكتبها صح' : 'مفيش اتصال، جرّب تاني'; return; }
     store.set('reg', { name: nm, phone: ph, age: ag, gender: GN }); info.name = nm; info.phone = ph; store.set('info', info); g.remove(); try { render(true); } catch (e3) {}
   };
   g.querySelector('#r-go').addEventListener('click', go);
