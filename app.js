@@ -477,13 +477,46 @@ function loadRevData() {
     const r = store.get('reg', {}) || {}; let ph = ''; try { ph = localStorage.getItem('regphoto') || ''; } catch (e) {}
     const av = /^data:image\//.test(ph) ? '<img src="' + esc(ph) + '" alt="">' : '<span>' + esc((r.name || '👤').trim().charAt(0)) + '</span>';
     let age = ''; if (r.dob) { const n = Math.floor((Date.now() - new Date(r.dob).getTime()) / 31557600000); if (n > 0) age = ' (' + n + ' سنة)'; }
-    const rows = [['📞', r.phone], ['⚧', r.gender], ['🎂', r.dob ? r.dob + age : '']].filter(x => x[1]).map(x => '<div>' + x[0] + ' <b>' + esc(String(x[1])) + '</b></div>').join('');
+    const rows = [['📞', r.phone], ['🎂', r.dob ? r.dob + age : '']].filter(x => x[1]).map(x => '<div>' + x[0] + ' <b>' + esc(String(x[1])) + '</b></div>').join('');
     const rv = document.querySelector('#m-rev-flag'); const hasRev = !!((REVS && REVS.count) || (IMGS && IMGS.length));
-    mn.innerHTML = '<div class="mn-bg" data-mclose="1"></div><div class="mn-p"><div class="mn-acc"><div class="mn-av">' + av + '</div><div class="mn-nm">' + esc(r.name || 'حسابي') + '</div><div class="mn-inf">' + rows + '</div></div>'
-      + '<button type="button" data-tab="invite" data-mclose="1">🎁 دعوة صحابك</button>' + (hasRev ? '<button type="button" id="m-rev" data-tab="reviews" data-mclose="1">⭐ آراء العملاء</button>' : '')
+    mn.innerHTML = '<div class="mn-bg" data-mclose="1"></div><div class="mn-p"><div class="mn-acc"><label class="mn-av" id="mn-avl">' + av + '<em>📷</em><input type="file" id="mn-ph" accept="image/*" hidden></label><div class="mn-nm">' + esc(r.name || 'حسابي') + '</div><div class="mn-inf">' + rows + '</div></div>'
+      + '<button type="button" id="mn-chat">🎧 خدمة العملاء<b id="mn-cu" hidden></b></button>' + '<button type="button" id="mn-edit">✏️ تعديل بياناتي</button><div id="mn-ef" hidden></div><button type="button" data-tab="invite" data-mclose="1">🎁 دعوة صحابك</button>' + (hasRev ? '<button type="button" id="m-rev" data-tab="reviews" data-mclose="1">⭐ آراء العملاء</button>' : '')
       + '<button type="button" class="mn-x" data-mclose="1">إغلاق</button></div>';
     mn.hidden = false;
   };
   hb.addEventListener('click', open);
-  mn.addEventListener('click', e => { if (e.target.closest('[data-mclose]')) setTimeout(() => { mn.hidden = true; }, 0); });
+  const rpc = async (b) => { const r = await fetch(SUPA_URL + '/rest/v1/rpc/app_update_profile', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ p_phone: (store.get('reg', {}) || {}).phone, p_did: localStorage.getItem('did') || '' }, b)) }); if (!r.ok) { let m = ''; try { m = (await r.json()).message || ''; } catch (e) {} throw new Error(m || 'x'); } };
+  mn.addEventListener('change', e => { if (e.target.id !== 'mn-ph') return; const f = e.target.files[0]; if (!f) return; const im = new Image(), rd = new FileReader(); rd.onload = () => { im.onload = async () => { const s = 200, c = document.createElement('canvas'); c.width = c.height = s; const k = Math.max(s / im.width, s / im.height), w = im.width * k, h = im.height * k; c.getContext('2d').drawImage(im, (s - w) / 2, (s - h) / 2, w, h); const d = c.toDataURL('image/jpeg', 0.8); const box = mn.querySelector('.mn-av'); try { await rpc({ p_photo: d }); localStorage.setItem('regphoto', d); const old = box.querySelector('img,span'); if (old) old.remove(); const ni = new Image(); ni.src = d; box.prepend(ni); } catch (er) { alert(/not allowed/.test(er.message) ? 'مش قادر أحفظ الصورة من الجهاز ده. كلم خدمة العملاء.' : 'مفيش اتصال، جرّب تاني'); } }; im.src = rd.result; }; rd.readAsDataURL(f); });
+  mn.addEventListener('click', e => {
+    if (e.target.closest('#mn-chat')) { mn.hidden = true; openChat(); return; }
+    if (e.target.closest('#mn-edit')) { const r = store.get('reg', {}) || {}, f = mn.querySelector('#mn-ef'); f.hidden = !f.hidden; if (!f.hidden) { f.innerHTML = '<input id="ef-n" type="text" value="' + esc(r.name || '') + '" placeholder="الاسم"><input id="ef-p" type="text" value="' + esc(r.phone || '') + '" disabled><label>تاريخ الميلاد</label><input id="ef-d" type="date" value="' + esc(r.dob || '') + '"><div id="ef-g"><button type="button" data-g="ذكر" class="' + (r.gender === 'ذكر' ? 'on' : '') + '">👨 ذكر</button><button type="button" data-g="أنثى" class="' + (r.gender === 'أنثى' ? 'on' : '') + '">👩 أنثى</button></div><button type="button" id="ef-s">حفظ</button><div id="ef-m"></div>'; } return; }
+    const gb = e.target.closest('#ef-g button'); if (gb) { mn.querySelectorAll('#ef-g button').forEach(x => x.classList.toggle('on', x === gb)); return; }
+    if (e.target.closest('#ef-s')) { const r = store.get('reg', {}) || {}, nm = mn.querySelector('#ef-n').value.trim(), dob = mn.querySelector('#ef-d').value, gn = (mn.querySelector('#ef-g .on') || {}).dataset; const m = mn.querySelector('#ef-m'); const ag = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / 31557600000) : 0;
+      if (nm.length < 2) { m.textContent = 'اكتب اسمك'; return; } if (!(ag >= 5 && ag <= 100)) { m.textContent = 'اكتب تاريخ ميلادك صح'; return; } if (!gn) { m.textContent = 'اختار ذكر ولا أنثى'; return; }
+      m.textContent = 'ثانية...'; rpc({ p_name: nm, p_dob: dob, p_gender: gn.g }).then(() => { r.name = nm; r.dob = dob; r.gender = gn.g; store.set('reg', r); info.name = nm; store.set('info', info); m.textContent = 'اتحفظ ✓'; setTimeout(open, 700); }).catch(er => { m.textContent = /not allowed/.test(er.message) ? 'مش قادر أحفظ من الجهاز ده. كلم خدمة العملاء.' : 'مفيش اتصال، جرّب تاني'; }); return; }
+    if (e.target.closest('#mn-avl, #mn-ef, #mn-edit')) return; if (e.target.closest('[data-mclose]')) setTimeout(() => { mn.hidden = true; }, 0); });
+})();
+
+/* شات خدمة العملاء */
+(function () {
+  const rpcC = async (fn, b) => { const r = await fetch(SUPA_URL + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ p_phone: (store.get('reg', {}) || {}).phone, p_did: localStorage.getItem('did') || '' }, b)) }); let d = null; try { d = await r.json(); } catch (e) {} if (!r.ok) throw new Error((d && d.message) || 'x'); return d; };
+  let box = null, timer = null, last = '';
+  const hm = s => new Date(s).toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit' });
+  const draw = L => { const key = JSON.stringify(L.map(x => x.id)); if (key === last) return; last = key; const m = box.querySelector('#ch-list'); const atEnd = m.scrollHeight - m.scrollTop - m.clientHeight < 80; m.innerHTML = L.length ? L.map(x => '<div class="cm ' + (x.s === 'c' ? 'me' : 'ad') + '"><span>' + esc(x.b) + '</span><i>' + hm(x.t) + '</i></div>').join('') : '<div class="cm0">ابعتلنا رسالتك وهنرد عليك هنا 🎧</div>'; if (atEnd || m.dataset.f !== '1') { m.scrollTop = m.scrollHeight; m.dataset.f = '1'; } };
+  const pull = async () => { try { draw(await rpcC('chat_get', {})); } catch (e) { if (/not allowed/.test(e.message)) box.querySelector('#ch-list').innerHTML = '<div class="cm0">مش قادر أفتح المحادثة من الجهاز ده. كلم خدمة العملاء على واتساب.</div>'; } };
+  window.openChat = () => {
+    if (!(store.get('reg', null))) return; last = '';
+    box = document.createElement('div'); box.id = 'chat';
+    box.innerHTML = '<div class="ch-h"><button type="button" id="ch-x">›</button><b>🎧 خدمة العملاء</b></div><div id="ch-list"></div><div class="ch-f"><textarea id="ch-t" rows="1" placeholder="اكتب رسالتك..." maxlength="1000"></textarea><button type="button" id="ch-s">إرسال</button></div>';
+    document.body.appendChild(box); document.body.style.overflow = 'hidden';
+    const close = () => { clearInterval(timer); box.remove(); document.body.style.overflow = ''; box = null; };
+    box.querySelector('#ch-x').onclick = close;
+    const send = async () => { const t = box.querySelector('#ch-t'), v = t.value.trim(); if (!v) return; const b = box.querySelector('#ch-s'); b.disabled = true; try { await rpcC('chat_send', { p_body: v }); t.value = ''; await pull(); } catch (e) { alert(/too many/.test(e.message) ? 'رسايل كتير. استنى شوية.' : /not allowed/.test(e.message) ? 'مش قادر أبعت من الجهاز ده.' : 'مفيش اتصال، جرّب تاني'); } b.disabled = false; };
+    box.querySelector('#ch-s').onclick = send;
+    box.querySelector('#ch-t').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+    pull(); timer = setInterval(() => { if (document.hidden) return; pull(); }, 5000);
+  };
+  const unread = async () => { if (!(store.get('reg', null))) return; try { const n = await rpcC('chat_unread', {}); const h = document.querySelector('#hb'); if (h) h.classList.toggle('dot', n > 0); window.__cu = n; const c = document.querySelector('#mn-cu'); if (c) { c.textContent = n; c.hidden = !n; } } catch (e) {} };
+  unread(); setInterval(() => { if (!document.hidden) unread(); }, 45000);
+  document.addEventListener('click', e => { if (e.target.closest('#hb')) setTimeout(() => { const c = document.querySelector('#mn-cu'); if (c && window.__cu) { c.textContent = window.__cu; c.hidden = false; } }, 30); });
 })();
