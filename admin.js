@@ -25,14 +25,14 @@ async function checkPin(p) {
 
 
 function showSec(s) {
-  if (!['orders', 'products', 'profit', 'materials', 'more', 'customers', 'expenses', 'referrals', 'reviews', 'settings'].includes(s)) s = 'orders';
+  if (!['orders', 'products', 'profit', 'materials', 'more', 'customers', 'expenses', 'referrals', 'reviews', 'settings', 'users'].includes(s)) s = 'orders';
   document.querySelectorAll('.tabsec').forEach(e => e.classList.toggle('on', e.id === 'sec-' + s));
-  document.querySelectorAll('#bnav button').forEach(b => b.classList.toggle('on', b.dataset.sec === (['customers', 'expenses', 'referrals', 'reviews', 'settings'].includes(s) ? 'more' : s)));
+  document.querySelectorAll('#bnav button').forEach(b => b.classList.toggle('on', b.dataset.sec === (['customers', 'expenses', 'referrals', 'reviews', 'settings', 'users'].includes(s) ? 'more' : s)));
   try { localStorage.setItem('admsec', s); } catch (e) {}
   window.scrollTo(0, 0);
 }
 document.querySelectorAll('#bnav button').forEach(b => b.addEventListener('click', () => { showSec(b.dataset.sec); if (b.dataset.sec === 'orders') loadOrders(); if (b.dataset.sec === 'profit') loadProfit(); if (b.dataset.sec === 'materials') setMS(($('#recbox') && !$('#recbox').hidden) ? 'rec' : 'mat'); if (b.dataset.sec === 'products') loadStock(); }));
-document.addEventListener('click', e => { const g = e.target.closest && e.target.closest('[data-go]'); if (g) { showSec(g.dataset.go); if (g.dataset.go === 'customers') loadCustomers(); if (g.dataset.go === 'expenses') loadExp(); if (g.dataset.go === 'referrals') loadRef(); if (g.dataset.go === 'reviews') loadRev(); } });
+document.addEventListener('click', e => { const g = e.target.closest && e.target.closest('[data-go]'); if (g) { showSec(g.dataset.go); if (g.dataset.go === 'customers') loadCustomers(); if (g.dataset.go === 'users') loadUsers(); if (g.dataset.go === 'expenses') loadExp(); if (g.dataset.go === 'referrals') loadRef(); if (g.dataset.go === 'reviews') loadRev(); } });
 function enterPanel() { $('#bnav').hidden = false; const s0 = (new URLSearchParams(location.search).get('tab')) || 'orders'; showSec(s0); if (s0 === 'profit') loadProfit(); if (s0 === 'materials') loadMats(); loadStock(); }
 
 // ===== الأرباح =====
@@ -453,7 +453,7 @@ document.addEventListener('change', async e => {
   else { o.status = prev; renderOrders(); toast('✗ مااتحفظش، جرّب تاني', true); }
 });
 async function adminRefresh() {
-  const s = (document.querySelector('.tabsec.on') || {}).id || 'sec-orders'; const f = { 'sec-orders': loadOrders, 'sec-products': async () => { await load(); await loadStock(); }, 'sec-profit': loadProfit, 'sec-materials': loadMats, 'sec-more': loadUsage, 'sec-customers': loadCustomers, 'sec-expenses': loadExp, 'sec-referrals': loadRef, 'sec-reviews': loadRev }[s];
+  const s = (document.querySelector('.tabsec.on') || {}).id || 'sec-orders'; const f = { 'sec-orders': loadOrders, 'sec-products': async () => { await load(); await loadStock(); }, 'sec-profit': loadProfit, 'sec-materials': loadMats, 'sec-more': loadUsage, 'sec-customers': loadCustomers, 'sec-users': loadUsers, 'sec-expenses': loadExp, 'sec-referrals': loadRef, 'sec-reviews': loadRev }[s];
   if (f) await f();
 }
 $('#reloadord').addEventListener('click', loadOrders);
@@ -782,3 +782,12 @@ document.addEventListener('click', e => { const b = e.target.closest && e.target
   addEventListener('touchend', end, { passive: true }); addEventListener('touchcancel', end, { passive: true });
 })();
 
+
+async function loadUsers() {
+  const box = $('#usersbox'); if (!box.innerHTML.trim()) box.innerHTML = '<div class="hint2">بيحمّل...</div>';
+  const r = await rpc('admin_list_users', { p_pin: PIN }).catch(() => null);
+  if (!r || !r.ok || !Array.isArray(r.data)) { box.innerHTML = '<div class="msg err">مشكلة في التحميل — جرّب تاني</div>'; return; }
+  const L = r.data, fd = s => { const d = new Date(s); return d.toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' }) + ' · ' + d.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit' }); };
+  const wa = p => 'https://wa.me/20' + String(p).replace(/^0/, '');
+  box.innerHTML = `<div class="hint2" style="margin:0 0 8px">إجمالي المسجلين: <b>${L.length}</b>. الرقم مكتوب من العميل ومش متأكد منه بكود.</div>` + (L.length ? '<div class="pcard">' + L.map(x => `<div class="crow">${x.photo && /^data:image\//.test(x.photo) ? `<img class="avt" src="${esc(x.photo)}" alt="">` : ''}<div class="cn">${esc(x.name)} <small>${esc(x.phone)}${x.age ? ' · ' + (+x.age) + ' سنة' : ''} · سجّل ${esc(fd(x.created_at))}${x.orders ? ' · ' + x.orders + ' طلب' : ''}</small></div><a class="mbtn" href="${wa(x.phone)}" target="_blank" rel="noopener">واتساب</a></div>`).join('') + '</div>' : '<div class="hint2" style="padding:18px 4px;text-align:center">لسه محدش سجّل.</div>');
+}

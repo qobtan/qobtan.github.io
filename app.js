@@ -431,3 +431,32 @@ function loadRevData() {
 })();
 
 (function(){const n=document.querySelector('.tabs');if(!n)return;const f=()=>n.classList.toggle('stuck',(window.scrollY||0)>110);addEventListener('scroll',f,{passive:true});f();})();
+
+/* ===== تسجيل العملاء (اسم + رقم تليفون) ===== */
+(function () {
+  if (store.get('reg', null)) return;
+  const g = document.createElement('div'); g.id = 'reg';
+  g.innerHTML = `<div class="rbox"><img src="logo.jpg" alt=""><h2>أهلاً بيك في منظفات القبطان</h2><p>سجّل اسمك ورقمك مرة واحدة وكمّل طلبك</p>
+  <input type="text" id="r-name" placeholder="الاسم" autocomplete="name" value="${esc(info.name || '')}">
+  <input type="tel" id="r-phone" placeholder="رقم التليفون (01xxxxxxxxx)" autocomplete="tel" inputmode="numeric" value="${esc(info.phone || '')}">
+  <input type="number" id="r-age" placeholder="السن (اختياري)" inputmode="numeric" min="5" max="100">
+  <label id="r-pl"><span id="r-pv">📷</span> صورتك (اختياري)<input type="file" id="r-photo" accept="image/*" hidden></label>
+  <button type="button" id="r-go">سجّل وادخل</button><div id="r-msg"></div>
+  <small>بياناتك بتستخدم لتوصيل طلباتك بس، ومش بنشاركها مع حد. <a href="privacy.html" target="_blank" rel="noopener">سياسة الخصوصية</a></small></div>`;
+  document.body.appendChild(g);
+  const msg = g.querySelector('#r-msg'); let PH = null;
+  g.querySelector('#r-photo').addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; const im = new Image(), rd = new FileReader(); rd.onload = () => { im.onload = () => { const s = 200, c = document.createElement('canvas'); c.width = c.height = s; const x = c.getContext('2d'), m = Math.min(im.width, im.height); x.drawImage(im, (im.width - m) / 2, (im.height - m) / 2, m, m, 0, 0, s, s); PH = c.toDataURL('image/jpeg', 0.72); const pv = g.querySelector('#r-pv'); pv.innerHTML = '<img src="' + PH + '" alt="">'; }; im.src = rd.result; }; rd.readAsDataURL(f); });
+  const go = async () => {
+    const nm = g.querySelector('#r-name').value.trim(); let ph = g.querySelector('#r-phone').value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\D/g, ''); if (ph.startsWith('20')) ph = '0' + ph.slice(2);
+    if (nm.length < 2) { msg.textContent = 'اكتب اسمك'; return; }
+    if (!/^01[0-9]{9}$/.test(ph)) { msg.textContent = 'اكتب رقم موبايل مصري صح (11 رقم بيبدأ بـ 01)'; return; }
+    const b = g.querySelector('#r-go'); b.disabled = true; b.textContent = 'ثانية...'; msg.textContent = '';
+    try {
+      const r = await fetch(SUPA_URL + '/rest/v1/rpc/app_register', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_name: nm, p_phone: ph, p_did: localStorage.getItem('did') || '', p_age: parseInt(g.querySelector('#r-age').value) || null, p_photo: PH }) });
+      if (!r.ok) throw new Error('x');
+      store.set('reg', { name: nm, phone: ph }); info.name = nm; info.phone = ph; store.set('info', info); g.remove(); render(true);
+    } catch (e) { b.disabled = false; b.textContent = 'سجّل وادخل'; msg.textContent = 'مفيش اتصال، جرّب تاني'; }
+  };
+  g.querySelector('#r-go').addEventListener('click', go);
+  g.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+})();
