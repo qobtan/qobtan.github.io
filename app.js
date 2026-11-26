@@ -27,19 +27,28 @@ const payLabel = p => p === 'vodafone' ? 'فودافون كاش' : 'كاش عن�
 const THX = 'سعداء بخدمة حضرتك 🌹';
 async function loadFee() { try { const r = await fetch(SUPA_URL + '/rest/v1/app_settings?select=key,value&key=in.(delivery_fee,vodafone_number)', { headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON } }); const d = await r.json(); if (!Array.isArray(d)) return; d.forEach(x => { if (x.key === 'delivery_fee') { const v = parseFloat(x.value); if (!isNaN(v)) { FEE = v; store.set('fee', v); } } if (x.key === 'vodafone_number') { VF = (x.value || '').trim(); store.set('vf', VF); } }); render(true); } catch (e) {} }
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const lines = () => PRODUCTS.filter(p => p.price > 0 && cart[p.id] > 0);
-const count = () => lines().reduce((s, p) => s + cart[p.id], 0);
-const total = () => lines().reduce((s, p) => s + cart[p.id] * p.price, 0);
-function change(id, d) { cart[id] = Math.max(0, (cart[id] || 0) + d); store.set('cart', cart); render(true); }
+const ck = (p, c) => c ? p.id + '~' + c : '' + p.id;
+let SEL = '';
+const lines = () => { const out = []; for (const k in cart) { const q = cart[k]; if (!(q > 0)) continue; const i = k.indexOf('~'); const id = +(i < 0 ? k : k.slice(0, i)); const c = i < 0 ? '' : k.slice(i + 1); const p = PRODUCTS.find(x => x.id === id); if (!p || !(p.price > 0)) continue; if (p.opts ? !p.opts.choices.includes(c) : c) continue; out.push({ k, p, c, q, id, name: c ? `${p.name} (${p.opts.title}: ${c})` : p.name, price: p.price, img: p.img }); } return out; };
+const count = () => lines().reduce((s, l) => s + l.q, 0);
+const total = () => lines().reduce((s, l) => s + l.q * l.price, 0);
+const pq = p => lines().filter(l => l.id === p.id).reduce((s, l) => s + l.q, 0);
+function change(k, d) { cart[k] = Math.max(0, (cart[k] || 0) + d); store.set('cart', cart); render(true); }
 function badge() { const b = $('#badge'); b.hidden = count() === 0; b.textContent = count(); const ob = $('#obadge'); if (ob) { const n = MYDATA ? MYDATA.length : MYO.length; ob.hidden = n === 0; ob.textContent = n; } }
-function ctl(p) {
-  const n = cart[p.id] || 0;
+function ctl(p, isDet) {
   if (p.price <= 0) return '';
+  if (p.opts) {
+    if (!isDet) { const n = pq(p); return `<button class="add" data-open="${p.id}">${n ? 'في السلة (' + n + ') ‹' : 'اختار ' + esc(p.opts.title)}</button>`; }
+    const k = SEL ? ck(p, SEL) : '', n = k ? (cart[k] || 0) : 0;
+    const chips = `<div class="opts"><div class="ot">${esc(p.opts.title)} <i>(لازم تختار)</i></div><div class="och">${p.opts.choices.map(c => `<button type="button" class="chip${SEL === c ? ' on' : ''}" data-sel="${esc(c)}">${esc(c)}</button>`).join('')}</div></div>`;
+    return chips + (!SEL ? `<button class="add dis" type="button" disabled>اختار ${esc(p.opts.title)} الأول</button>` : n === 0 ? `<button class="add" data-add="${esc(k)}">أضف للسلة</button>` : `<div class="step"><button data-dec="${esc(k)}" aria-label="نقص">−</button><bdi>${n}</bdi><button data-inc="${esc(k)}" aria-label="زود">+</button></div>`);
+  }
+  const n = cart[p.id] || 0;
   return n === 0 ? `<button class="add" data-add="${p.id}">أضف للسلة</button>`
     : `<div class="step"><button data-dec="${p.id}" aria-label="نقص">−</button><bdi>${n}</bdi><button data-inc="${p.id}" aria-label="زود">+</button></div>`;
 }
 function cardHtml(p) {
-  return `<div class="card${(cart[p.id] || 0) > 0 ? ' in' : ''}" data-open="${p.id}"><div class="pw">${p.img ? `<img src="${p.img}" alt="${esc(p.name)}">` : '<div class="ph"></div>'}</div>
+  return `<div class="card${pq(p) > 0 ? ' in' : ''}" data-open="${p.id}"><div class="pw">${p.img ? `<img src="${p.img}" alt="${esc(p.name)}">` : '<div class="ph"></div>'}</div>
   <div class="t">${esc(p.name)}</div>${(()=>{const l=p.desc?String(p.desc.intro||'').split('\n').map(s=>s.trim()).filter(Boolean)[0]||'':'';return l?`<div class="ds">${esc(l.replace(/^[✓•]\s*/,''))}</div>`:''})()}${p.detail && p.price > 0 ? `<div class="sz">${esc(p.detail)}</div>` : ''}<div class="more">التفاصيل ‹</div><div class="pr">${p.price > 0 ? `<b>${p.price}</b> ج.م` : '<span class="soon">السعر قريبًا</span>'}</div>${ctl(p)}</div>`;
 }
 function shop() {
@@ -57,7 +66,7 @@ function shopGrid() {
 }
 function waLink() {
   const L = lines();
-  const msg = ['طلب جديد من تطبيق منظفات القبطان', ...L.map(p => `${cart[p.id]} × ${p.name} = ${money(p.price * cart[p.id])}`),
+  const msg = ['طلب جديد من تطبيق منظفات القبطان', ...L.map(l => `${l.q} × ${l.name} = ${money(l.price * l.q)}`),
     `إجمالي المنتجات: ${money(total())}`, `خدمة توصيل: ${money(FEE - disc())}`, `الإجمالي: ${money(grand())}`, `الدفع: ${payLabel(PAY)}`, `الاسم: ${info.name.trim()}`, `التليفون: ${info.phone.trim()}`, `العنوان (الفيوم): ${info.address.trim()}`, THX].join('\n');
   return `https://wa.me/${WA}?text=${encodeURIComponent(msg)}`;
 }
@@ -65,8 +74,8 @@ function ready() { return lines().length > 0 && info.name.trim() && info.phone.t
 function cartView() {
   const L = lines();
   view.innerHTML = `<div class="sec"><span>سلتك</span><em>${count()} قطعة</em></div>` + (L.length === 0 ? '<div class="empty">السلة فاضية<br><button class="go" data-tab="shop">ارجع للمنتجات</button></div>' : `
-  <div class="lines">${L.map(p => `<div class="l2">${p.img ? `<img src="${p.img}" alt="">` : ''}<div class="li"><b>${esc(p.name)}</b><span>${cart[p.id]} × ${money(p.price)}</span><span class="lt">${money(p.price * cart[p.id])}</span></div>
-  <div class="step"><button data-dec="${p.id}">−</button><bdi>${cart[p.id]}</bdi><button data-inc="${p.id}">+</button></div></div>`).join('')}</div>
+  <div class="lines">${L.map(l => `<div class="l2">${l.img ? `<img src="${l.img}" alt="">` : ''}<div class="li"><b>${esc(l.p.name)}</b>${l.c ? `<span class="lo">${esc(l.p.opts.title)}: ${esc(l.c)}</span>` : ''}<span>${l.q} × ${money(l.price)}</span><span class="lt">${money(l.price * l.q)}</span></div>
+  <div class="step"><button data-dec="${esc(l.k)}">−</button><bdi>${l.q}</bdi><button data-inc="${esc(l.k)}">+</button></div></div>`).join('')}</div>
   <div class="sum"><div><span>عدد القطع</span><b>${count()}</b></div><div><span>إجمالي المنتجات</span><b>${money(total())}</b></div><div><span>خدمة توصيل${disc() ? ' (توصيل مجاني - دعوة أصدقاء)' : ''}</span><b>${money(FEE - disc())}</b></div><div class="gt"><span>الإجمالي</span><b>${money(grand())}</b></div></div><div class="thx" style="text-align:center;color:#0b2a4a;font-weight:700;margin:8px 0">${THX}</div>
   ${refNote()}<div class="sec"><span>بيانات التوصيل</span><em>الفيوم</em></div>
   <label class="f"><span>الاسم</span><input type="text" id="f-name" value="${esc(info.name)}" autocomplete="name"></label>
@@ -91,9 +100,9 @@ function detailView(p) {
   <h2 class="dt">${esc(p.name)}</h2><div class="dp">${p.price > 0 ? `<b>${p.price}</b> ج.م` : '<span class="soon">السعر قريبًا</span>'}</div>
   ${p.desc ? `<div class="dd">${String(p.desc.intro || '').split('\n').map(s => s.trim()).filter(Boolean).map(s => /^[✓•]/.test(s) ? `<p class="ck"><i>✓</i>${esc(s.replace(/^[✓•]\s*/, ''))}</p>` : `<p>${esc(s)}</p>`).join('')}${p.desc.pts.map(t => `<p class="ck"><i>✓</i>${esc(t)}</p>`).join('')}</div>` : ''}
   <div class="sum">${rows.map(r => `<div><span>${r[0]}</span><b>${esc(r[1])}</b></div>`).join('')}</div>
-  <div class="dctl">${ctl(p)}</div><button class="shr" data-share="${p.id}">مشاركة المنتج</button>${count() ? `<div class="bar"><div><span>${count()} قطعة</span><b>${money(total())}</b></div><button class="go" data-tab="cart">كمّل الطلب</button></div>` : ''}`;
+  <div class="dctl">${ctl(p, true)}</div><button class="shr" data-share="${p.id}">مشاركة المنتج</button>${count() ? `<div class="bar"><div><span>${count()} قطعة</span><b>${money(total())}</b></div><button class="go" data-tab="cart">كمّل الطلب</button></div>` : ''}`;
 }
-function openP(id) { det = id; history.pushState({ d: id }, ''); render(); scrollTo(0, 0); }
+function openP(id) { det = id; SEL = ''; history.pushState({ d: id }, ''); render(); scrollTo(0, 0); }
 function closeP() { det = null; render(); }
 addEventListener('popstate', () => { if (det !== null) closeP(); });
 let MYO = store.get('myorders', []);
@@ -192,7 +201,7 @@ function render(keepScroll) { badge(); syncRevTab(); document.querySelectorAll('
 async function placeOrder(btn) {
   if (!ready()) return;
   const L = lines();
-  const items = L.map(p => ({ id: p.id, name: p.name, qty: cart[p.id], price: p.price }));
+  const items = L.map(l => ({ id: l.id, name: l.name, qty: l.q, price: l.price, opt: l.c || undefined }));
   const msg = $('#pmsg'); btn.disabled = true; btn.textContent = 'بيتبعت...';
   try {
     const r = await fetch(SUPA_URL + '/rest/v1/rpc/place_order_v2', { method: 'POST', headers: { apikey: SUPA_ANON, Authorization: 'Bearer ' + SUPA_ANON, 'Content-Type': 'application/json' },
@@ -226,9 +235,11 @@ document.addEventListener('click', e => {
   else if (t.dataset.pay) { PAY = t.dataset.pay; store.set('pay', PAY); render(true); }
   else if (t.dataset.copy) { try { navigator.clipboard.writeText(t.dataset.copy); t.textContent = 'اتنسخ ✓'; } catch (e) { t.textContent = t.dataset.copy; } }
   else if (t.dataset.tab) { det = null; JUST = null; tab = t.dataset.tab; render(); scrollTo(0, 0); if (tab === 'orders') loadMyOrders(); }
-  else if (t.dataset.add) change(+t.dataset.add, 1);
-  else if (t.dataset.inc) change(+t.dataset.inc, 1);
-  else if (t.dataset.dec) change(+t.dataset.dec, -1);
+  else if (t.dataset.open) openP(+t.dataset.open);
+  else if (t.dataset.sel) { SEL = t.dataset.sel; render(true); }
+  else if (t.dataset.add) change(t.dataset.add, 1);
+  else if (t.dataset.inc) change(t.dataset.inc, 1);
+  else if (t.dataset.dec) change(t.dataset.dec, -1);
 });
 
 const cachedLive = store.get('liveProducts', null);
@@ -240,7 +251,7 @@ async function liveProducts() {
     if (!r.ok) return;
     const rows = await r.json();
     if (!Array.isArray(rows) || !rows.length) return;
-    PRODUCTS = rows.map(x => ({ id: x.id, name: x.name, detail: x.detail || '', price: +x.price || 0, img: x.img || '', cat: x.cat || 'منظفات', desc: (x.intro || (Array.isArray(x.pts) && x.pts.length)) ? { intro: x.intro || '', pts: Array.isArray(x.pts) ? x.pts : [] } : null }));
+    PRODUCTS = rows.map(x => ({ id: x.id, name: x.name, detail: x.detail || '', price: +x.price || 0, img: x.img || '', cat: x.cat || 'منظفات', opts: (x.opts && Array.isArray(x.opts.choices) && x.opts.choices.length) ? { title: x.opts.title || 'الاختيار', choices: x.opts.choices.map(String) } : null, desc: (x.intro || (Array.isArray(x.pts) && x.pts.length)) ? { intro: x.intro || '', pts: Array.isArray(x.pts) ? x.pts : [] } : null }));
     store.set('liveProducts', PRODUCTS);
     render(true);
   } catch (e) {}

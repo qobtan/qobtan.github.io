@@ -232,6 +232,9 @@ function card(p) {
   <input type="text" class="f-detail" value="${esc(p.detail || '')}">
   <label class="lbl">المخزون (عدد القطع الموجودة) — بيظهرلك إنت بس</label>
   <input type="number" inputmode="numeric" min="0" step="1" class="f-stock" data-sid="${p.id}" value="${stkOf(p.id) === null ? '' : stkOf(p.id)}" placeholder="اكتب العدد اللي معاك">
+  <label class="lbl">الاختيارات (اختياري) — لو المنتج ليه أكتر من ريحة أو لون</label>
+  <input type="text" class="f-otitle" placeholder="اسم الاختيار، مثال: الريحة" value="${esc((p.opts && p.opts.title) || '')}">
+  <textarea class="f-ochoices" rows="4" placeholder="اكتب كل اختيار في سطر لوحده">${esc((p.opts && Array.isArray(p.opts.choices) ? p.opts.choices : []).join('\n'))}</textarea>
   <label class="lbl">وصف المنتج</label>
   <textarea class="f-intro" rows="7" placeholder="اكتب وصف المنتج هنا. كل سطر هيظهر لوحده للعميل، وابدأ السطر بعلامة ✓ لو عايزه نقطة.">${esc(desc)}</textarea>
   <button class="abtn" type="button" data-act="save">حفظ التعديلات</button>
@@ -265,11 +268,15 @@ async function saveCard(el) {
   msg.className = 'msg'; msg.textContent = 'بيحفظ...';
   const catv = el.querySelector('.f-cat') ? el.querySelector('.f-cat').value : 'منظفات';
   const r = await rpc('admin_update_product', Object.assign({ p_pin: PIN, p_id: id }, body)).catch(() => null);
+  const oc = [...new Set((el.querySelector('.f-ochoices').value || '').split('\n').map(s => s.replace(/~/g, '').trim()).filter(Boolean))];
+  const ot = (el.querySelector('.f-otitle').value || '').trim() || 'الاختيار';
+  const optsv = oc.length ? { title: ot, choices: oc } : null;
+  await rpc('admin_set_opts', { p_pin: PIN, p_id: id, p_opts: optsv }).catch(() => null);
   const rc = await rpc('admin_set_cat', { p_pin: PIN, p_id: id, p_cat: catv }).catch(() => null);
   const changed = r && r.ok && Array.isArray(r.data) ? r.data.length : 0;
   if (changed > 0) {
     const row = rows.find(x => x.id === id);
-    if (row) Object.assign(row, { cat: catv, name: body.p_name, price: body.p_price, detail: body.p_detail, intro: body.p_intro, pts: [] });
+    if (row) Object.assign(row, { opts: optsv, cat: catv, name: body.p_name, price: body.p_price, detail: body.p_detail, intro: body.p_intro, pts: [] });
     msg.className = 'msg ok'; msg.textContent = 'اتحفظ — ظهر في المتجر فورًا';
   } else { msg.className = 'msg err'; msg.textContent = 'فشل الحفظ — اتأكد من الرقم السري'; }
 }
