@@ -9,32 +9,51 @@
 <link rel="icon" href="icon-192.png">
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;min-height:100vh;background:radial-gradient(900px 500px at 50% -10%,#12324d 0,#0b141a 60%);color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;display:flex;justify-content:center}
-.w{width:100%;max-width:440px;padding:36px 22px 40px;text-align:center}
-.logo{width:150px;height:150px;border-radius:50%;object-fit:cover;border:3px solid #e9c46a;box-shadow:0 10px 40px rgba(233,196,106,.25);background:#fff}
-h1{margin:20px 0 4px;font-size:30px;font-weight:800;color:#f6d77b}
-.sub{margin:0 0 26px;color:#8696a0;font-size:15px}
-.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:62px;border-radius:31px;background:linear-gradient(135deg,#f9e08f,#d9a93a);color:#0b2a4a;font-size:21px;font-weight:800;text-decoration:none;box-shadow:0 8px 24px rgba(217,169,58,.35)}
-.btn:active{transform:scale(.98)}
-.meta{margin:10px 0 0;color:#8696a0;font-size:12.5px}
-.card{margin:26px 0 0;background:#111b21;border:1px solid #1f2c34;border-radius:18px;padding:18px 18px 8px;text-align:right}
-.card h2{margin:0 0 12px;font-size:16px;color:#fff}
-.st{display:flex;gap:12px;align-items:flex-start;margin:0 0 12px;color:#d1d7db;font-size:14.5px;line-height:1.6}
-.st i{flex:none;width:26px;height:26px;border-radius:50%;background:#e9c46a;color:#0b2a4a;font-style:normal;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px}
-.web{display:block;margin:22px 0 0;color:#e9c46a;font-size:15px;font-weight:700;text-decoration:none;padding:12px}
-.web small{display:block;color:#8696a0;font-weight:400;font-size:12.5px;margin-top:2px}
-</style></head><body>
+body{margin:0;min-height:100vh;background:#0b141a;color:#e9edef;font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;overflow-x:hidden}
+.bg{position:fixed;inset:0;z-index:-1;background:radial-gradient(520px 380px at 85% -5%,#1d5aa055,transparent 70%),radial-gradient(480px 360px at 10% 18%,#d9a93a30,transparent 70%),linear-gradient(#0b141a,#08101a)}
+.w{max-width:460px;margin:0 auto;padding:34px 20px 44px;text-align:center}
+.logo{width:150px;height:150px;border-radius:50%;object-fit:cover;background:#fff;border:3px solid #e9c46a;box-shadow:0 0 0 8px #e9c46a1f,0 14px 44px #000a,0 0 60px #d9a93a40}
+h1{margin:22px 0 4px;font-size:34px;font-weight:800;background:linear-gradient(135deg,#fff3c4,#f6d77b 45%,#d9a93a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{margin:0;color:#9aa7ae;font-size:15px;letter-spacing:.5px}
+.chips{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:18px 0 6px}
+.chips span{padding:6px 13px;border-radius:99px;background:#111b21;border:1px solid #d9a93a55;color:#f6d77b;font-size:12.5px}
+.btn{position:relative;display:flex;align-items:center;justify-content:center;gap:12px;width:100%;height:68px;margin:22px 0 8px;border-radius:34px;text-decoration:none;font-size:22px;font-weight:800;color:#0b2a4a;background:linear-gradient(135deg,#fff0b3,#f6d77b 40%,#d9a93a);box-shadow:0 10px 30px #d9a93a55,inset 0 2px 0 #fff8;animation:pl 2.4s ease-in-out infinite}
+.btn:active{transform:scale(.97)}
+.btn svg{width:26px;height:26px}
+@keyframes pl{0%,100%{box-shadow:0 10px 30px #d9a93a55,0 0 0 0 #f6d77b66}50%{box-shadow:0 10px 30px #d9a93a55,0 0 0 12px #f6d77b00}}
+.meta{margin:8px 0 0;color:#8696a0;font-size:12.5px}
+.meta b{color:#f6d77b}
+.shots{display:flex;gap:10px;margin:26px -20px 0;padding:4px 20px;overflow-x:auto;scrollbar-width:none}
+.shots img{flex:0 0 104px;width:104px;height:104px;border-radius:18px;object-fit:cover;border:1px solid #d9a93a40;box-shadow:0 6px 18px #0008}
+.card{margin-top:26px;background:#111b21;border:1px solid #1f2c34;border-radius:22px;padding:20px 18px 8px;text-align:right}
+.card h2{margin:0 0 16px;font-size:18px;color:#f6d77b}
+.st{display:flex;gap:13px;align-items:flex-start;margin:0 0 15px;color:#d1d7db;font-size:14.5px;line-height:1.75}
+.st i{flex:none;width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#f6d77b,#d9a93a);color:#0b2a4a;font-style:normal;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:15px;margin-top:1px}
+.st b{color:#fff}
+.warn{margin:6px 0 16px;padding:12px 14px;border-radius:14px;background:#d9a93a14;border:1px dashed #d9a93a77;color:#f3e3b0;font-size:13.5px;line-height:1.8;text-align:right}
+.wa{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:22px;height:54px;border-radius:27px;background:#25d366;color:#06361b;text-decoration:none;font-weight:800;font-size:16.5px}
+.web{display:block;margin-top:18px;color:#f6d77b;font-weight:700;font-size:14.5px;text-decoration:none}
+.web small{display:block;color:#8696a0;font-weight:400;font-size:12px;margin-top:2px}
+.ft{margin-top:26px;color:#5f6f78;font-size:11.5px}
+</style></head><body><div class="bg"></div>
 <div class="w">
 <img class="logo" src="logo.jpg" alt="القبطان">
 <h1>منظفات القبطان</h1>
 <p class="sub">نظافة .. ثقة .. جودة</p>
-<a class="btn" href="1-qobtan-v7.apk" download="Qobtan.apk">⬇ تحميل التطبيق</a>
-<p class="meta">للأندرويد · حوالي 2 ميجا · مجاني</p>
+<div class="chips"><span>🚚 توصيل لحد الباب</span><span>🛒 اطلب في ثواني</span><span>🎁 هدايا ودعوات</span></div>
+<a class="btn" href="1-qobtan-v7.apk" download="Qobtan.apk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 20h16"/></svg>حمّل التطبيق</a>
+<p class="meta">للأندرويد · <b>النسخة 7</b> · حوالي 2 ميجا · مجاني</p>
+<div class="shots"><img src="p1.jpg" alt=""><img src="p2.jpg" alt=""><img src="p3.jpg" alt=""><img src="p4.jpg" alt=""><img src="p5.jpg" alt=""></div>
 <div class="card">
 <h2>طريقة التثبيت</h2>
-<div class="st"><i>1</i><span>دوس على زر <b>تحميل التطبيق</b> واستنى لحد ما التحميل يخلص.</span></div>
-<div class="st"><i>2</i><span>افتح الملف اللي نزل. لو ظهرلك تنبيه، اختار <b>الإعدادات</b> وفعّل <b>السماح من هذا المصدر</b> (تثبيت من مصادر غير معروفة).</span></div>
-<div class="st"><i>3</i><span>ارجع واضغط <b>تثبيت</b>، وبعدها افتح التطبيق واطلب.</span></div>
+<div class="st"><i>1</i><span>لو عندك النسخة القديمة من التطبيق، <b>امسحها الأول</b> (اضغط عليها مطوّل ← إلغاء التثبيت). حسابك وطلباتك محفوظين وبترجع بتسجيل الدخول برقمك وتاريخ ميلادك.</span></div>
+<div class="st"><i>2</i><span>دوس على زر <b>حمّل التطبيق</b> واستنى لحد ما التحميل يخلص. لو ظهرلك «الملف ممكن يكون ضار» دوس <b>تنزيل على أي حال</b>.</span></div>
+<div class="st"><i>3</i><span>افتح الملف اللي نزل. لو ظهر «السماح من هذا المصدر» اختار <b>الإعدادات</b> وفعّل السماح، وارجع.</span></div>
+<div class="st"><i>4</i><span>دوس <b>تثبيت</b>. لو ظهر تحذير <b>Play Protect</b> اختار <b>تثبيت على أي حال</b> (التطبيق آمن، التحذير بيظهر لأنه مش من المتجر).</span></div>
+<div class="st"><i>5</i><span>افتح التطبيق، سجّل بياناتك مرة واحدة واطلب. 🌹</span></div>
 </div>
+<div class="warn">⚠️ التحذير اللي بيظهر وقت التثبيت عادي لأي تطبيق خارج متجر جوجل. لو واجهتك أي مشكلة كلمنا وهنساعدك فورًا.</div>
+<a class="wa" href="https://wa.me/201028540358"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.2 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.8s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.4.5c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.2 1.4 2.5 1.5.3.1.4.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.8-.1 1.4z"/></svg>كلّم خدمة العملاء على واتساب</a>
 <a class="web" href="./">أو افتح النسخة على المتصفح<small>من غير تحميل، شغالة على أي موبايل</small></a>
+<div class="ft">© منظفات القبطان</div>
 </div></body></html>
