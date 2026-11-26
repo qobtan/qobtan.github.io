@@ -25,14 +25,14 @@ async function checkPin(p) {
 
 
 function showSec(s) {
-  if (!['orders', 'products', 'profit', 'materials', 'more', 'customers', 'expenses', 'referrals', 'reviews', 'settings', 'users'].includes(s)) s = 'orders';
+  if (!['orders', 'products', 'profit', 'materials', 'more', 'customers', 'expenses', 'referrals', 'reviews', 'settings', 'users', 'chats'].includes(s)) s = 'orders';
   document.querySelectorAll('.tabsec').forEach(e => e.classList.toggle('on', e.id === 'sec-' + s));
-  document.querySelectorAll('#bnav button').forEach(b => b.classList.toggle('on', b.dataset.sec === (['customers', 'expenses', 'referrals', 'reviews', 'settings', 'users'].includes(s) ? 'more' : s)));
+  document.querySelectorAll('#bnav button').forEach(b => b.classList.toggle('on', b.dataset.sec === (['customers', 'expenses', 'referrals', 'reviews', 'settings', 'users', 'chats'].includes(s) ? 'more' : s)));
   try { localStorage.setItem('admsec', s); } catch (e) {}
   window.scrollTo(0, 0);
 }
 document.querySelectorAll('#bnav button').forEach(b => b.addEventListener('click', () => { showSec(b.dataset.sec); if (b.dataset.sec === 'orders') loadOrders(); if (b.dataset.sec === 'profit') loadProfit(); if (b.dataset.sec === 'materials') setMS(($('#recbox') && !$('#recbox').hidden) ? 'rec' : 'mat'); if (b.dataset.sec === 'products') loadStock(); }));
-document.addEventListener('click', e => { const g = e.target.closest && e.target.closest('[data-go]'); if (g) { showSec(g.dataset.go); if (g.dataset.go === 'customers') loadCustomers(); if (g.dataset.go === 'users') loadUsers(); if (g.dataset.go === 'expenses') loadExp(); if (g.dataset.go === 'referrals') loadRef(); if (g.dataset.go === 'reviews') loadRev(); } });
+document.addEventListener('click', e => { const g = e.target.closest && e.target.closest('[data-go]'); if (g) { showSec(g.dataset.go); if (g.dataset.go === 'customers') loadCustomers(); if (g.dataset.go === 'users') loadUsers(); if (g.dataset.go === 'chats') { CHP = null; loadChats(); } if (g.dataset.go === 'expenses') loadExp(); if (g.dataset.go === 'referrals') loadRef(); if (g.dataset.go === 'reviews') loadRev(); } });
 function enterPanel() { $('#bnav').hidden = false; const s0 = (new URLSearchParams(location.search).get('tab')) || 'orders'; showSec(s0); if (s0 === 'profit') loadProfit(); if (s0 === 'materials') loadMats(); loadStock(); }
 
 // ===== الأرباح =====
@@ -791,3 +791,32 @@ async function loadUsers() {
   const wa = p => 'https://wa.me/20' + String(p).replace(/^0/, '');
   box.innerHTML = `<div class="hint2" style="margin:0 0 8px">إجمالي المسجلين: <b>${L.length}</b>. الرقم مكتوب من العميل ومش متأكد منه بكود.</div>` + (L.length ? '<div class="pcard">' + L.map(x => `<div class="crow">${x.photo && /^data:image\//.test(x.photo) ? `<img class="avt" src="${esc(x.photo)}" alt="">` : ''}<div class="cn">${esc(x.name)} <small>${esc(x.phone)}${x.gender ? ' · ' + esc(x.gender) : ''}${x.dob ? ' · 🎂 ' + esc(String(x.dob)) : ''}${x.age ? ' (' + (+x.age) + ' سنة)' : ''} · سجّل ${esc(fd(x.created_at))}${x.orders ? ' · ' + x.orders + ' طلب' : ''}</small></div><a class="mbtn" href="${wa(x.phone)}" target="_blank" rel="noopener">واتساب</a></div>`).join('') + '</div>' : '<div class="hint2" style="padding:18px 4px;text-align:center">لسه محدش سجّل.</div>');
 }
+
+
+/* ===== المحادثات ===== */
+let CHP = null, CHT = null;
+const chT = s => { const d = new Date(s); const n = new Date(); return (d.toDateString() === n.toDateString() ? '' : d.toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' }) + ' ') + d.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit' }); };
+async function chatBadge() { if (!PIN) return; const r = await rpc('admin_chat_unread', { p_pin: PIN }).catch(() => null); const n = r && r.ok && typeof r.data === 'number' ? r.data : 0; [['#nbchat'], ['#chbadge']].forEach(([s]) => { const e = $(s); if (e) { e.textContent = n; e.hidden = !n; } }); }
+async function loadChats() {
+  const box = $('#chatbox'); if (CHP) { openChatThread(CHP.phone, CHP.name, true); return; }
+  if (!box.innerHTML.trim()) box.innerHTML = '<div class="hint2">بيحمّل...</div>';
+  const r = await rpc('admin_chat_list', { p_pin: PIN }).catch(() => null);
+  if (CHP) return;
+  if (!r || !r.ok || !Array.isArray(r.data)) { box.innerHTML = '<div class="msg err">مشكلة في التحميل، جرّب تاني</div>'; return; }
+  box.innerHTML = r.data.length ? r.data.map(x => `<button type="button" class="cli ${x.unread ? 'un' : ''}" data-chat="${esc(x.phone)}" data-nm="${esc(x.name)}"><div class="cn"><b>${esc(x.name)}</b><small>${x.ls === 'a' ? 'إنت: ' : ''}${esc(x.last)}</small></div><div style="text-align:left"><em>${esc(chT(x.at))}</em>${x.unread ? `<div class="ub">${+x.unread}</div>` : ''}</div></button>`).join('') : '<div class="hint2" style="padding:18px 4px;text-align:center">لسه مفيش رسايل من العملاء.</div>';
+  chatBadge();
+}
+async function openChatThread(phone, name, quiet) {
+  CHP = { phone, name }; const box = $('#chatbox');
+  if (!quiet || !box.querySelector('.cth')) { box.innerHTML = `<div class="cth"><div class="chd"><button type="button" id="chback">‹ كل المحادثات</button><b>${esc(name)}</b><a href="https://wa.me/20${String(phone).replace(/^0/, '')}" target="_blank" rel="noopener">واتساب</a></div><div class="cl"></div><div class="cf"><textarea id="cht" rows="1" placeholder="اكتب ردك..." maxlength="1000"></textarea><button type="button" id="chsend">إرسال</button></div></div>`; }
+  const r = await rpc('admin_chat_get', { p_pin: PIN, p_phone: phone }).catch(() => null); if (!r || !r.ok || !Array.isArray(r.data) || !CHP) return;
+  const cl = box.querySelector('.cl'); if (!cl) return; const key = r.data.map(x => x.id).join(','); if (cl.dataset.k === key) return; cl.dataset.k = key; const end = cl.scrollHeight - cl.scrollTop - cl.clientHeight < 80 || !cl.dataset.f;
+  cl.innerHTML = r.data.map(x => `<div class="cm ${x.s}"><span>${esc(x.b)}</span><i>${esc(chT(x.t))}</i></div>`).join(''); if (end) { cl.scrollTop = cl.scrollHeight; cl.dataset.f = '1'; } chatBadge();
+}
+document.addEventListener('click', async e => {
+  const c = e.target.closest && e.target.closest('[data-chat]'); if (c) { openChatThread(c.dataset.chat, c.dataset.nm); return; }
+  if (e.target.closest && e.target.closest('#chback')) { CHP = null; loadChats(); return; }
+  if (e.target.closest && e.target.closest('#chsend') && CHP) { const t = $('#cht'), v = t.value.trim(); if (!v) return; const b = $('#chsend'); b.disabled = true; const r = await rpc('admin_chat_send', { p_pin: PIN, p_phone: CHP.phone, p_body: v }).catch(() => null); b.disabled = false; if (r && r.ok) { t.value = ''; $('#chatbox .cl').dataset.k = ''; openChatThread(CHP.phone, CHP.name, true); } else alert('الرد ماتبعتش، جرّب تاني'); }
+});
+setInterval(() => { if (document.hidden || !PIN) return; chatBadge(); const on = $('#sec-chats') && $('#sec-chats').classList.contains('on'); if (on) loadChats(); }, 8000);
+setTimeout(chatBadge, 2500);
